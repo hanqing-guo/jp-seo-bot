@@ -13,10 +13,12 @@ import {
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 
 const MONTHS = ['6月', '7月', '8月', '9月', '10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月']
 
 export default function RankTracker() {
+  const { t } = useT()
   const { keywords, currentSiteId } = useStore()
   const list = keywords.filter(k => k.siteId === currentSiteId && k.rank !== null)
 
@@ -34,7 +36,7 @@ export default function RankTracker() {
 
   return (
     <div>
-      <PageHeader title="ランキング追跡" subtitle="月次の検索順位推移" />
+      <PageHeader title={t('page.rank.title')} subtitle={t('page.rank.subtitle')} />
 
       <div className="card mb-6">
         <SectionTitle hint="主要 4 キーワード">12 ヶ月推移</SectionTitle>

@@ -2,6 +2,7 @@ import { Download, FileText } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 
 const HISTORY = [
   { id: 'rep-1', period: '2026年4月', generatedAt: '2026-05-02', clicks: 11800, top10: 24, articles: 6 },
@@ -11,14 +12,15 @@ const HISTORY = [
 ]
 
 export default function Reports() {
+  const { t } = useT()
   const { sites, currentSiteId } = useStore()
   const site = sites.find(s => s.id === currentSiteId)
 
   return (
     <div>
       <PageHeader
-        title="レポート"
-        subtitle="月次・週次サマリーの自動生成と配信"
+        title={t('page.report.title')}
+        subtitle={t('page.report.subtitle')}
         actions={
           <button className="btn-primary">
             <FileText className="size-4 mr-1" />

@@ -3,8 +3,10 @@ import { AlertTriangle, Key, RotateCcw, Save } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 
 export default function SettingsPage() {
+  const { t } = useT()
   const { sites, currentSiteId, reset } = useStore()
   const site = sites.find(s => s.id === currentSiteId)
   const [claudeKey, setClaudeKey] = useState('sk-ant-•••••••••••••••••')
@@ -22,7 +24,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="設定" subtitle="サイト情報・API キー・データリセット" />
+      <PageHeader title={t('page.settings.title')} subtitle={t('page.settings.subtitle')} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card">

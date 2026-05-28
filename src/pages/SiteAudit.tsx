@@ -4,16 +4,18 @@ import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import Stat from '../components/Stat'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 
-const CATEGORY_LABEL: Record<string, string> = {
-  technical: '技術',
-  'on-page': 'オンページ',
-  content: 'コンテンツ',
-  mobile: 'モバイル',
-  speed: '表示速度',
+const CATEGORY_KEYS: Record<string, string> = {
+  technical: 'audit.category.technical',
+  'on-page': 'audit.category.on-page',
+  content: 'audit.category.content',
+  mobile: 'audit.category.mobile',
+  speed: 'audit.category.speed',
 }
 
 export default function SiteAudit() {
+  const { t } = useT()
   const { auditIssues } = useStore()
   const [filter, setFilter] = useState<string>('all')
   const list = filter === 'all' ? auditIssues : auditIssues.filter(i => i.severity === filter)
@@ -26,8 +28,8 @@ export default function SiteAudit() {
   return (
     <div>
       <PageHeader
-        title="サイト診断"
-        subtitle="技術 SEO / オンページ / モバイル / 表示速度の総合監査"
+        title={t('page.audit.title')}
+        subtitle={t('page.audit.subtitle')}
         actions={
           <button className="btn-primary">
             <Play className="size-4 mr-1" />
@@ -82,7 +84,7 @@ export default function SiteAudit() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="text-sm font-semibold text-slate-900">{i.title}</h4>
-                  <span className="badge-gray">{CATEGORY_LABEL[i.category] ?? i.category}</span>
+                  <span className="badge-gray">{t(CATEGORY_KEYS[i.category] ?? i.category)}</span>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{i.description}</p>
               </div>

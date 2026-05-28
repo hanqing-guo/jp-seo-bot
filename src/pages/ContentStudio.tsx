@@ -3,6 +3,7 @@ import { PenLine, Sparkles, Wand2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 import { scoreJapaneseContent } from '../lib/japaneseScore'
 import type { ContentScore } from '../store/types'
 
@@ -49,6 +50,7 @@ const LABEL: Record<string, string> = {
 }
 
 export default function ContentStudio() {
+  const { t } = useT()
   const { articles, currentSiteId, upsertArticle } = useStore()
   const siteArticles = articles.filter(a => a.siteId === currentSiteId)
   const [text, setText] = useState(SAMPLE_TEXT)
@@ -112,8 +114,8 @@ export default function ContentStudio() {
   return (
     <div>
       <PageHeader
-        title="コンテンツ生成 & スコアリング"
-        subtitle="JAPAN_SPEC §H 詳細スコア (12 項目) を実時間で算出"
+        title={t('page.content.title')}
+        subtitle={t('page.content.subtitle')}
         spec="JAPAN_SPEC §H + §G"
         actions={
           <>
@@ -255,9 +257,9 @@ export default function ContentStudio() {
                   </span>
                 </td>
                 <td className="table-cell">
-                  {a.status === 'published' ? <span className="badge-green">公開中</span>
-                    : a.status === 'in_review' ? <span className="badge-amber">レビュー</span>
-                    : <span className="badge-gray">下書き</span>}
+                  {a.status === 'published' ? <span className="badge-green">{t('article.status.published')}</span>
+                    : a.status === 'in_review' ? <span className="badge-amber">{t('article.status.in_review')}</span>
+                    : <span className="badge-gray">{t('article.status.draft')}</span>}
                 </td>
               </tr>
             ))}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CheckCircle2, Clipboard, Code2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
+import { useT } from '../lib/i18n'
 import { JAPAN_RICH_RESULTS } from '../store/mockData'
 
 type SchemaType = 'LocalBusiness' | 'FAQ' | 'Breadcrumb' | 'Article' | 'SoftwareApplication'
@@ -23,6 +24,7 @@ const DEFAULT_BREADCRUMBS: BreadcrumbRow[] = [
 ]
 
 export default function SchemaGenerator() {
+  const { t } = useT()
   const [type, setType] = useState<SchemaType>('LocalBusiness')
   const [copied, setCopied] = useState(false)
 
@@ -135,8 +137,8 @@ export default function SchemaGenerator() {
   return (
     <div>
       <PageHeader
-        title="Schema Markup ジェネレーター"
-        subtitle="日本市場で効果的な 5 種類の JSON-LD を生成"
+        title={t('page.schema.title')}
+        subtitle={t('page.schema.subtitle')}
         spec="JAPAN_SPEC §E + §G"
       />
 

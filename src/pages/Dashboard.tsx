@@ -19,6 +19,7 @@ import PageHeader from '../components/PageHeader'
 import Stat from '../components/Stat'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 
 const TRAFFIC = [
   { m: '6月', clicks: 4200, impressions: 138000 },
@@ -49,6 +50,7 @@ const DEVICE_DATA = [
 ]
 
 export default function Dashboard() {
+  const { t } = useT()
   const { keywords, articles, backlinks, auditIssues, currentSiteId } = useStore()
   const siteKw = keywords.filter(k => k.siteId === currentSiteId)
   const siteArt = articles.filter(a => a.siteId === currentSiteId)
@@ -63,8 +65,8 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader
-        title="ダッシュボード"
-        subtitle="主要 SEO 指標の概観"
+        title={t('page.dashboard.title')}
+        subtitle={t('page.dashboard.subtitle')}
         actions={
           <Link to="/report" className="btn-ghost">
             <BarChart3 className="size-4 mr-1" />
@@ -169,11 +171,11 @@ export default function Dashboard() {
                   <td className="table-cell text-slate-500">{a.targetKeyword}</td>
                   <td className="table-cell">
                     {a.status === 'published' ? (
-                      <span className="badge-green">公開中</span>
+                      <span className="badge-green">{t('article.status.published')}</span>
                     ) : a.status === 'in_review' ? (
-                      <span className="badge-amber">レビュー</span>
+                      <span className="badge-amber">{t('article.status.in_review')}</span>
                     ) : (
-                      <span className="badge-gray">下書き</span>
+                      <span className="badge-gray">{t('article.status.draft')}</span>
                     )}
                   </td>
                   <td className="table-cell">{a.wordCount.toLocaleString()}</td>

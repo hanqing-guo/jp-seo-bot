@@ -13,6 +13,7 @@ import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import Stat from '../components/Stat'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 import { JAPAN_LOCAL_DIRECTORIES } from '../store/mockData'
 
 const CHECKLIST_LABELS: Record<string, { label: string; required: boolean; jp: boolean }> = {
@@ -34,6 +35,7 @@ const CHECKLIST_LABELS: Record<string, { label: string; required: boolean; jp: b
 }
 
 export default function Meo() {
+  const { t } = useT()
   const { meo, sites, currentSiteId, updateMeo } = useStore()
   const site = sites.find(s => s.id === currentSiteId)
   const profile = meo[currentSiteId]
@@ -73,7 +75,7 @@ export default function Meo() {
   if (!profile) {
     return (
       <div>
-        <PageHeader title="MEO 対策" subtitle="このサイトには MEO プロファイルが未設定です。" spec="JAPAN_SPEC §C" />
+        <PageHeader title={t('page.meo.title')} subtitle="このサイトには MEO プロファイルが未設定です。" spec="JAPAN_SPEC §C" />
         <div className="card text-center py-12">
           <MapPin className="size-12 mx-auto text-slate-300 mb-3" />
           <p className="text-sm text-slate-600">
@@ -87,8 +89,8 @@ export default function Meo() {
   return (
     <div>
       <PageHeader
-        title="MEO 対策"
-        subtitle={`${site?.name} の Googleビジネスプロフィール / Yahoo!ロコ / エキテン 最適化`}
+        title={t('page.meo.title')}
+        subtitle={`${site?.name} — ${t('page.meo.subtitle')}`}
         spec="JAPAN_SPEC §C"
       />
 

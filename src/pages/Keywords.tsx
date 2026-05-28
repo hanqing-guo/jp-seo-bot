@@ -4,6 +4,7 @@ import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import MiniSpark from '../components/MiniSpark'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 import { extractKeyNouns, posBreakdown, type PosBreakdown, type Token, tokenize } from '../lib/japaneseNlp'
 import { generateVariants, type JapaneseVariants } from '../lib/japaneseVariants'
 
@@ -14,14 +15,15 @@ const INTENT_BADGE: Record<string, string> = {
   transactional: 'badge-red',
 }
 
-const INTENT_LABEL_JA: Record<string, string> = {
-  informational: '情報',
-  commercial: '商業',
-  navigational: '指名',
-  transactional: '取引',
+const INTENT_KEYS: Record<string, string> = {
+  informational: 'intent.informational',
+  commercial: 'intent.commercial',
+  navigational: 'intent.navigational',
+  transactional: 'intent.transactional',
 }
 
 export default function Keywords() {
+  const { t } = useT()
   const { keywords, currentSiteId } = useStore()
   const [filter, setFilter] = useState('')
   const [intent, setIntent] = useState<string>('all')
@@ -69,8 +71,8 @@ export default function Keywords() {
   return (
     <div>
       <PageHeader
-        title="キーワード分析"
-        subtitle="日本語形態素解析 (§A) + 共起語 + 検索ボリューム/順位"
+        title={t('page.keywords.title')}
+        subtitle={t('page.keywords.subtitle')}
         spec="JAPAN_SPEC §A"
       />
 
@@ -218,7 +220,7 @@ export default function Keywords() {
                 <td className="table-cell font-medium text-slate-900">{k.keyword}</td>
                 <td className="table-cell text-slate-500">{k.cluster}</td>
                 <td className="table-cell">
-                  <span className={INTENT_BADGE[k.intent] ?? 'badge-gray'}>{INTENT_LABEL_JA[k.intent] ?? k.intent}</span>
+                  <span className={INTENT_BADGE[k.intent] ?? 'badge-gray'}>{t(INTENT_KEYS[k.intent] ?? k.intent)}</span>
                 </td>
                 <td className="table-cell text-right tabular-nums">{k.searchVolume.toLocaleString()}</td>
                 <td className="table-cell text-right">

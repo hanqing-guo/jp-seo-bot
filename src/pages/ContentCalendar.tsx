@@ -16,11 +16,11 @@ const STATUS_BADGE: Record<CalendarEntry['status'], string> = {
   cancelled: 'badge-red',
 }
 
-const STATUS_LABEL: Record<CalendarEntry['status'], string> = {
-  planned: '計画中',
-  in_progress: '執筆中',
-  published: '公開済',
-  cancelled: '中止',
+const STATUS_KEY: Record<CalendarEntry['status'], string> = {
+  planned: 'calendar.status.planned',
+  in_progress: 'calendar.status.in_progress',
+  published: 'calendar.status.published',
+  cancelled: 'calendar.status.cancelled',
 }
 
 function ymKey(year: number, month: number) {
@@ -102,8 +102,8 @@ export default function ContentCalendar() {
   return (
     <div>
       <PageHeader
-        title="コンテンツカレンダー"
-        subtitle="JAPAN_CONTENT_CALENDAR (季節イベント) と連動した発信スケジュール"
+        title={t('page.calendar.title')}
+        subtitle={t('page.calendar.subtitle')}
         spec="JAPAN_SPEC §F"
         actions={
           <>
@@ -203,11 +203,11 @@ export default function ContentCalendar() {
                     onChange={ev => upsertCalendarEntry({ ...e, status: ev.target.value as CalendarEntry['status'] })}
                     className="text-xs rounded-md border border-slate-200 px-2 py-1 bg-white"
                   >
-                    {Object.entries(STATUS_LABEL).map(([k, label]) => (
-                      <option key={k} value={k}>{label}</option>
+                    {Object.entries(STATUS_KEY).map(([k, key]) => (
+                      <option key={k} value={k}>{t(key)}</option>
                     ))}
                   </select>
-                  <span className={'ml-2 ' + STATUS_BADGE[e.status]}>{STATUS_LABEL[e.status]}</span>
+                  <span className={'ml-2 ' + STATUS_BADGE[e.status]}>{t(STATUS_KEY[e.status])}</span>
                 </td>
                 <td className="table-cell text-right">
                   <button onClick={() => deleteCalendarEntry(e.id)} className="text-xs text-rose-600 hover:underline inline-flex items-center gap-1">

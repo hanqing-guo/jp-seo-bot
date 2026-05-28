@@ -4,6 +4,7 @@ import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import Stat from '../components/Stat'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 import type { WordPressIntegration } from '../store/types'
 
 interface FetchedPost {
@@ -22,6 +23,7 @@ const SEO_PLUGIN_LABELS: Record<string, string> = {
 }
 
 export default function WordPress() {
+  const { t } = useT()
   const { wp, wpPosts, currentSiteId, setWp } = useStore()
   const integration = wp[currentSiteId]
   const [wpUrl, setWpUrl] = useState(integration?.wpUrl ?? 'https://')
@@ -100,8 +102,8 @@ export default function WordPress() {
   return (
     <div>
       <PageHeader
-        title="WordPress 連携"
-        subtitle="WP REST API + Application Password 認証。Yoast / Rank Math / AIOSEO / SEO SIMPLE PACK 対応"
+        title={t('page.wordpress.title')}
+        subtitle={t('page.wordpress.subtitle')}
         spec="JAPAN_SPEC §D"
         actions={
           integration ? (
@@ -260,8 +262,8 @@ export default function WordPress() {
                 <td className="table-cell text-xs font-mono text-slate-400">{p.slug}</td>
                 <td className="table-cell text-xs text-slate-500">{p.focusKeyword ?? '—'}</td>
                 <td className="table-cell">
-                  {p.status === 'publish' ? <span className="badge-green">公開中</span>
-                    : p.status === 'draft' ? <span className="badge-gray">下書き</span>
+                  {p.status === 'publish' ? <span className="badge-green">{t('wp.status.publish')}</span>
+                    : p.status === 'draft' ? <span className="badge-gray">{t('wp.status.draft')}</span>
                     : <span className="badge-amber">{p.status}</span>}
                 </td>
                 <td className="table-cell text-xs text-slate-500">{new Date(p.modifiedAt).toLocaleDateString('ja-JP')}</td>

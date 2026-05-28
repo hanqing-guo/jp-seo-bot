@@ -4,37 +4,38 @@ import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import Stat from '../components/Stat'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 import type { BacklinkSource } from '../store/types'
 
-const CATEGORY_LABEL: Record<string, string> = {
-  blog: 'ブログ',
-  press_release: 'プレスリリース',
-  comparison: '比較サイト',
-  portal: 'ポータル / MEO',
-  community: 'コミュニティ / 技術',
-  authoritative: '権威機関',
+const CATEGORY_KEY: Record<string, string> = {
+  blog: 'backlink.category.blog',
+  press_release: 'backlink.category.press_release',
+  comparison: 'backlink.category.comparison',
+  portal: 'backlink.category.portal',
+  community: 'backlink.category.community',
+  authoritative: 'backlink.category.authoritative',
 }
 
-const STRENGTH_LABEL: Record<string, string> = {
-  low: '低',
-  medium: '中',
-  high: '高',
-  very_high: '極めて高',
-  critical: '最重要',
+const STRENGTH_KEY: Record<string, string> = {
+  low: 'backlink.strength.low',
+  medium: 'backlink.strength.medium',
+  high: 'backlink.strength.high',
+  very_high: 'backlink.strength.very_high',
+  critical: 'backlink.strength.critical',
 }
 
-const LINK_LABEL: Record<string, string> = {
-  dofollow: 'dofollow',
-  nofollow: 'nofollow',
-  nofollow_mostly: 'nofollow 主体',
-  mixed: '混在',
+const LINK_KEY: Record<string, string> = {
+  dofollow: 'backlink.linkType.dofollow',
+  nofollow: 'backlink.linkType.nofollow',
+  nofollow_mostly: 'backlink.linkType.nofollow_mostly',
+  mixed: 'backlink.linkType.mixed',
 }
 
-const STATUS_LABEL: Record<BacklinkSource['status'], string> = {
-  not_registered: '未登録',
-  in_progress: '進行中',
-  registered: '登録済',
-  failed: '失敗',
+const STATUS_KEY: Record<BacklinkSource['status'], string> = {
+  not_registered: 'backlink.status.not_registered',
+  in_progress: 'backlink.status.in_progress',
+  registered: 'backlink.status.registered',
+  failed: 'backlink.status.failed',
 }
 
 const PR_SAMPLE = (kw: string, biz: string) => `### プレスリリース下書き（PR TIMES 投稿用）
@@ -69,6 +70,7 @@ ${kw} 領域における中小企業の課題を解決するため、専門ノ�
 広報担当：〇〇　Email: press@example.co.jp`
 
 export default function Backlinks() {
+  const { t } = useT()
   const { backlinks, setBacklinkStatus, sites, currentSiteId } = useStore()
   const site = sites.find(s => s.id === currentSiteId)
   const [cat, setCat] = useState<string>('all')
@@ -95,8 +97,8 @@ export default function Backlinks() {
   return (
     <div>
       <PageHeader
-        title="被リンク戦略プランナー"
-        subtitle="日本特有の被リンク獲得チャネル 26 件 (JAPAN_SPEC §B 原文) を活用"
+        title={t('page.backlinks.title')}
+        subtitle={t('page.backlinks.subtitle')}
         spec="JAPAN_SPEC §B"
         actions={
           <button onClick={() => setShowPr(v => !v)} className="btn-primary">
@@ -187,7 +189,7 @@ export default function Backlinks() {
                   <div className="text-xs text-slate-400 line-clamp-1">{b.notes}</div>
                 </td>
                 <td className="table-cell">
-                  <span className="badge-gray">{CATEGORY_LABEL[b.category] ?? b.category}</span>
+                  <span className="badge-gray">{t(CATEGORY_KEY[b.category] ?? b.category)}</span>
                 </td>
                 <td className="table-cell text-right">
                   <span
@@ -209,12 +211,12 @@ export default function Backlinks() {
                           : 'badge-gray'
                     }
                   >
-                    {STRENGTH_LABEL[b.seoStrength]}
+                    {t(STRENGTH_KEY[b.seoStrength])}
                   </span>
                 </td>
                 <td className="table-cell">
                   <span className={b.linkType === 'dofollow' ? 'badge-green' : 'badge-gray'}>
-                    {LINK_LABEL[b.linkType]}
+                    {t(LINK_KEY[b.linkType])}
                   </span>
                 </td>
                 <td className="table-cell text-xs text-slate-600">
@@ -237,7 +239,7 @@ export default function Backlinks() {
                   >
                     {(['not_registered', 'in_progress', 'registered', 'failed'] as const).map(s => (
                       <option key={s} value={s}>
-                        {STATUS_LABEL[s]}
+                        {t(STATUS_KEY[s])}
                       </option>
                     ))}
                   </select>

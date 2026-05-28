@@ -3,8 +3,10 @@ import { Plus } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 
 export default function Competitors() {
+  const { t } = useT()
   const { competitors } = useStore()
 
   const chartData = competitors.map(c => ({
@@ -15,8 +17,8 @@ export default function Competitors() {
   return (
     <div>
       <PageHeader
-        title="競合分析"
-        subtitle="競合ドメインの DR / オーガニック流入 / 共通キーワード"
+        title={t('page.competitor.title')}
+        subtitle={t('page.competitor.subtitle')}
         actions={
           <button className="btn-primary">
             <Plus className="size-4 mr-1" />
