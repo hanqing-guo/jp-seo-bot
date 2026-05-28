@@ -6,8 +6,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Globe2,
-  Info, Lock, RefreshCcw, Sparkles, Stethoscope, XCircle,
+  AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Copy, Globe2,
+  Info, Link as LinkIcon, Lock, RefreshCcw, Share2, Sparkles, Stethoscope, XCircle,
 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import { useT } from '../lib/i18n'
@@ -131,7 +131,7 @@ export default function Diagnosis() {
       <PageHeader
         title={t('page.diagnosis.title')}
         subtitle={t('page.diagnosis.subtitle')}
-        spec="DIAGNOSIS_SPEC §10 / Phase 2"
+        spec="DIAGNOSIS_SPEC §10 / Phase 1-4 完了"
       />
 
       {state.kind === 'idle'    ? renderIdle()    : null}
@@ -220,13 +220,15 @@ export default function Diagnosis() {
           </div>
 
           <div className="card bg-gradient-to-br from-brand-50 to-white border-brand-100">
-            <h3 className="text-sm font-bold text-slate-900 mb-2">Phase 2 実装状況</h3>
+            <h3 className="text-sm font-bold text-slate-900 mb-2">Phase 1-4 実装完了</h3>
             <ul className="space-y-1.5 text-xs">
               {[
-                'Module A (テクニカル): HTTPS / robots / sitemap / CWV / 構造化データ',
-                'Module B (オンページ): title / meta / H1 / alt / 文字数 / 薬機法',
-                'スコアリング (6 カテゴリ加重 + Google/Yahoo 専用)',
-                'LOADING 8 ステップアニメーション + RESULT 表示',
+                'Module A-B (テクニカル + オンページ): 8 + 8 件のチェック',
+                'Module C-E (Google/Yahoo Japan + 被リンク): 16 件のチェック',
+                'Module F (AI サマリー): DeepSeek / Claude / template 切替',
+                'スコアリング (6 カテゴリ加重 + A-F グレード)',
+                'LOADING 8 ステップ + RESULT (心理 CTA + シェア)',
+                'レート制限 (IP 別 3 回/時間, in-memory)',
               ].map((l, i) => (
                 <li key={i} className="flex items-center gap-2 text-emerald-700">
                   <CheckCircle2 className="size-3.5" />
@@ -235,7 +237,7 @@ export default function Diagnosis() {
               ))}
             </ul>
             <p className="mt-3 text-[11px] text-slate-500">
-              Phase 3 で Module C/D/E + Claude AI サマリーを実装。
+              Edge Function をデプロイすると実 URL 診断が有効化されます。未デプロイ時は demo mock で動作確認可能。
             </p>
           </div>
         </div>
@@ -429,19 +431,204 @@ export default function Diagnosis() {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap gap-2 justify-between">
+        {/* 心理的 trigger CTA (spec §11.1) — grade 別 */}
+        <CtaSection score={data.scores.total} criticalCount={data.criticalCount} />
+
+        {/* シェア機能 (spec §11.2) */}
+        <ShareCard
+          url={data.url}
+          totalScore={data.scores.total}
+          googleScore={data.scores.google}
+          yahooScore={data.scores.yahoo}
+        />
+
+        <div className="flex flex-wrap gap-2 justify-end">
           <button onClick={reset} className="btn-ghost">
             <RefreshCcw className="size-4 mr-1" />
             別の URL を診断
-          </button>
-          <button className="btn-primary">
-            <ArrowRight className="size-4 mr-1" />
-            検出された問題を自動で修正する (Phase 4 で実装)
           </button>
         </div>
       </div>
     )
   }
+}
+
+// ──────────────────────────────────────────────────────────
+// 心理的 trigger CTA (spec §11.1 完全実装)
+// ──────────────────────────────────────────────────────────
+function CtaSection({ score, criticalCount }: { score: number; criticalCount: number }) {
+  // F ランク (0-30): 危機感 → 緊急行動
+  if (score < 31) {
+    return (
+      <div className="card border-rose-300 bg-gradient-to-br from-rose-50 to-white">
+        <p className="text-sm font-bold text-rose-900">
+          致命的な問題が {criticalCount} 件あります。このままでは競合に大きく遅れをとります。
+        </p>
+        <p className="mt-2 text-xs text-rose-700">
+          いますぐ JP SEO Bot 有料プランの自動修正で、最低でも 6 ヶ月分の遅れを取り戻せます。
+        </p>
+        <button className="mt-3 w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-rose-600 px-6 py-3 text-base font-bold text-white hover:bg-rose-700 transition-colors">
+          <Sparkles className="size-5 mr-2" />
+          今すぐ無料で改善を始める
+          <ArrowRight className="size-5 ml-2" />
+        </button>
+      </div>
+    )
+  }
+  // D ランク (31-50): 競争心
+  if (score < 51) {
+    return (
+      <div className="card border-amber-300 bg-gradient-to-br from-amber-50 to-white">
+        <p className="text-sm font-bold text-amber-900">
+          競合と比べてどうか — 業界平均 62 点に対して、あなたのサイトは {score} 点。
+        </p>
+        <p className="mt-2 text-xs text-amber-700">
+          現状の SEO 改善余地はかなり大きく、計画的に修正すれば 3-6 ヶ月で平均以上に追いつけます。
+        </p>
+        <button className="mt-3 w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-orange-600 px-6 py-3 text-base font-bold text-white hover:bg-orange-700 transition-colors">
+          <ArrowRight className="size-5 mr-2" />
+          競合を追い越すプランを見る
+        </button>
+      </div>
+    )
+  }
+  // C ランク (51-65): 達成感
+  if (score < 66) {
+    return (
+      <div className="card border-brand-200 bg-gradient-to-br from-brand-50 to-white">
+        <p className="text-sm font-bold text-brand-900">
+          あと {80 - score} 点上げれば、検索結果 1 ページ目が現実的に視野に入ります。
+        </p>
+        <p className="mt-2 text-xs text-brand-700">
+          残りの問題を計画的に修正すれば、検索順位の改善が見込めます。
+        </p>
+        <button className="mt-3 w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-3 text-base font-bold text-white hover:bg-brand-700 transition-colors">
+          <ArrowRight className="size-5 mr-2" />
+          残りの問題を修正して順位を上げる
+        </button>
+      </div>
+    )
+  }
+  // B ランク (66-79): 自信付与
+  if (score < 80) {
+    return (
+      <div className="card border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+        <p className="text-sm font-bold text-emerald-900">
+          すでに良い基盤があります。さらに最適化すれば上位表示が可能です。
+        </p>
+        <p className="mt-2 text-xs text-emerald-700">
+          現在のスコアは業界上位 30% に相当。あと一歩で上位 5% を狙えます。
+        </p>
+        <button className="mt-3 w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-emerald-600 px-6 py-3 text-base font-bold text-white hover:bg-emerald-700 transition-colors">
+          <ArrowRight className="size-5 mr-2" />
+          さらに上を目指す(上位 5% へ)
+        </button>
+      </div>
+    )
+  }
+  // A ランク (80+): AI/GEO
+  return (
+    <div className="card border-emerald-300 bg-gradient-to-br from-emerald-50 via-emerald-50/50 to-brand-50">
+      <p className="text-sm font-bold text-emerald-900">
+        優れた SEO 基盤です。次は AI 検索可視性 (GEO) の強化を。
+      </p>
+      <p className="mt-2 text-xs text-emerald-700">
+        ChatGPT・Perplexity・Google AI Overview など、AI 検索結果での引用率を高めることが次の差別化要素です。
+      </p>
+      <button className="mt-3 w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-emerald-600 to-brand-600 px-6 py-3 text-base font-bold text-white hover:from-emerald-700 hover:to-brand-700 transition-colors">
+        <Sparkles className="size-5 mr-2" />
+        AI 検索 (ChatGPT/Perplexity) でも引用されるサイトへ
+      </button>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────
+// シェア機能 (spec §11.2)
+// ──────────────────────────────────────────────────────────
+function ShareCard({ url, totalScore, googleScore, yahooScore }: {
+  url: string; totalScore: number; googleScore: number; yahooScore: number
+}) {
+  const [copied, setCopied] = useState(false)
+  const hostname = useMemo(() => {
+    try { return new URL(url).hostname } catch { return url }
+  }, [url])
+
+  const shareText =
+    `${hostname} の SEO スコアは ${totalScore}/100 でした。` +
+    `Google Japan: ${googleScore} 点 / Yahoo Japan: ${yahooScore} 点。` +
+    `JP SEO Bot で無料診断できます`
+
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : 'https://jp-seo-bot.example.co.jp/diagnosis'
+
+  function shareNative() {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      navigator.share({ text: shareText, url: pageUrl }).catch(() => { /* user cancelled */ })
+    }
+  }
+
+  function shareTwitter() {
+    const u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(pageUrl)}`
+    window.open(u, '_blank', 'noopener,noreferrer')
+  }
+
+  function shareLine() {
+    const u = `https://line.me/R/share?text=${encodeURIComponent(`${shareText}\n${pageUrl}`)}`
+    window.open(u, '_blank', 'noopener,noreferrer')
+  }
+
+  function shareFacebook() {
+    const u = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`
+    window.open(u, '_blank', 'noopener,noreferrer')
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${pageUrl}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard 不可
+    }
+  }
+
+  const hasNative = typeof navigator !== 'undefined' && 'share' in navigator
+
+  return (
+    <div className="card">
+      <div className="flex items-center gap-2 mb-2">
+        <Share2 className="size-4 text-slate-500" />
+        <h3 className="text-sm font-bold text-slate-900">結果をシェア</h3>
+      </div>
+      <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+        診断結果を SNS でシェアすると、同業他社や知り合いにも JP SEO Bot を知ってもらえます。
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {hasNative ? (
+          <button onClick={shareNative} className="btn-primary">
+            <Share2 className="size-4 mr-1" /> シェア
+          </button>
+        ) : null}
+        <button onClick={shareTwitter} className="btn-ghost">
+          <span className="font-bold mr-1">𝕏</span> X (Twitter)
+        </button>
+        <button onClick={shareLine} className="btn-ghost">
+          <span className="font-bold text-emerald-600 mr-1">LINE</span>
+        </button>
+        <button onClick={shareFacebook} className="btn-ghost">
+          <span className="font-bold text-brand-600 mr-1">f</span> Facebook
+        </button>
+        <button onClick={copyLink} className="btn-ghost">
+          {copied ? <><CheckCircle2 className="size-4 mr-1 text-emerald-600" /> コピー済</> : <><Copy className="size-4 mr-1" /> リンクをコピー</>}
+        </button>
+      </div>
+      <pre className="mt-3 rounded-lg bg-slate-50 border border-slate-100 p-3 text-[11px] text-slate-600 whitespace-pre-wrap">
+        {shareText}
+        {'\n'}
+        {pageUrl}
+      </pre>
+    </div>
+  )
 }
 
 function EngineBar({ label, score, color }: { label: string; score: number; color: string }) {

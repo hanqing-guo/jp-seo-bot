@@ -177,6 +177,92 @@ export function generateMockDiagnosis(url: string): DiagnosisResponse {
     scoreImpact: 0,
   })
 
+  // ─── Module C/D/E mock items (Phase 3+) ───────────────────
+  items.push({
+    checkId: 'google_business_profile',
+    level: total < 70 ? 'warning' : 'passed',
+    engine: 'google',
+    category: 'Google Japan',
+    title: total < 70
+      ? 'Googleビジネスプロフィールが未登録です'
+      : 'Googleビジネスプロフィールが登録されています',
+    description: 'Googleビジネスプロフィール(旧 Googleマイビジネス)は、Google 検索とGoogleマップでのローカル表示に直結します。日本の中小企業にとって最重要の無料集客ツールです。',
+    fixSuggestion: 'https://business.google.com/ から無料で登録できます。NAP(企業名・住所・電話番号)をサイトと一致させてください。',
+    currentValue: total < 70 ? '未登録' : '登録済み',
+    idealValue: '登録済み・最新情報に更新',
+    scoreImpact: total < 70 ? -10 : 0,
+  })
+  items.push({
+    checkId: 'google_ai_overview',
+    level: total < 60 ? 'warning' : 'info',
+    engine: 'google',
+    category: 'Google Japan',
+    title: total < 60
+      ? 'Google AI Overview に引用されにくい構造です'
+      : 'Google AI Overview に部分的に対応しています',
+    description: '2025 年に日本でも展開された Google AI Overview は、検索結果上部に AI 生成の回答を表示します。ここに引用されることで、クリック数が大幅に増加します。',
+    fixSuggestion: 'FAQ セクションの追加、Schema Markup の設定、E-E-A-T の向上(著者情報・引用元の明示)が効果的です。',
+    currentValue: total < 60 ? 'AI Overview 対応スコア 25/100' : 'AI Overview 対応スコア 55/100',
+    idealValue: '70 点以上',
+    scoreImpact: total < 60 ? -5 : -3,
+  })
+  items.push({
+    checkId: 'yahoo_loco',
+    level: total < 75 ? 'warning' : 'passed',
+    engine: 'yahoo',
+    category: 'Yahoo Japan',
+    title: total < 75
+      ? 'Yahoo!ロコに未登録です(地域集客の機会損失)'
+      : 'Yahoo!ロコに登録されています',
+    description: 'Yahoo!ロコは Yahoo Japan の地域ビジネス情報サービスです。Yahoo Japan ユーザー(特に 40 代以上)の検索で地域情報として表示されます。無料で登録でき、ローカル SEO に直結します。',
+    fixSuggestion: 'https://loco.yahoo.co.jp/ からビジネス情報を無料登録できます。NAP(企業名・住所・電話番号)を GBP と一致させてください。',
+    currentValue: total < 75 ? '未登録' : '登録済み',
+    idealValue: '登録済み・情報最新',
+    scoreImpact: total < 75 ? -10 : 0,
+  })
+  items.push({
+    checkId: 'yahoo_chiebukuro',
+    level: 'info',
+    engine: 'yahoo',
+    category: 'Yahoo Japan',
+    title: 'Yahoo!知恵袋に 8 件の関連 Q&A があります(回答機会あり)',
+    description: 'Yahoo!知恵袋への回答は、ブランドの専門性をアピールし間接的な SEO 効果(ブランド認知・被リンク)につながります。',
+    fixSuggestion: '「業界 X のおすすめサービスは?」などの質問に専門家として回答し、ブランドの権威性を示しましょう。',
+    currentValue: '8 件の関連 Q&A',
+    idealValue: '関連 Q&A への定期的な回答',
+    scoreImpact: 0,
+  })
+  items.push({
+    checkId: 'domain_age',
+    level: total < 50 ? 'warning' : total < 70 ? 'info' : 'passed',
+    engine: 'common',
+    category: '被リンク',
+    title: total < 50
+      ? '新しいドメインです(運用 8 ヶ月)— 信頼性の蓄積が必要です'
+      : total < 70
+        ? '比較的新しいドメインです(運用 1 年 4 ヶ月)'
+        : 'ドメインの信頼性が高いです(運用 3 年 2 ヶ月)',
+    description: 'ドメインエイジ(ドメインの運用期間)は SEO の信頼性指標のひとつです。古いドメインほど Google から信頼されやすい傾向があります。',
+    fixSuggestion: '新しいドメインの場合、良質なコンテンツの継続的な公開と被リンクの獲得が信頼性を早く高める方法です。',
+    currentValue: total < 50 ? '0 年 8 ヶ月' : total < 70 ? '1 年 4 ヶ月' : '3 年 2 ヶ月',
+    idealValue: '2 年以上',
+    scoreImpact: total < 50 ? -5 : total < 70 ? -3 : 0,
+  })
+  items.push({
+    checkId: 'japan_directories',
+    level: total < 70 ? 'warning' : 'info',
+    engine: 'common',
+    category: '被リンク',
+    title: total < 70
+      ? '重要なディレクトリ 2 件への登録が未完了です'
+      : '主要ディレクトリの一部に未登録があります',
+    description: '日本の主要ビジネスディレクトリへの登録は、NAP 情報の一貫性を高め、ローカル SEO と被リンク獲得の両方に効果があります。',
+    fixSuggestion: '未登録のディレクトリ: Googleビジネスプロフィール、Yahoo!ロコ\nJP SEO Bot の被リンクプランナーで一括管理できます。',
+    currentValue: total < 70 ? '1/5 登録済み' : '3/5 登録済み',
+    idealValue: '全ディレクトリ登録済み',
+    scoreImpact: total < 70 ? -8 : -3,
+  })
+
   const criticalCount = items.filter(i => i.level === 'critical').length
   const warningCount  = items.filter(i => i.level === 'warning').length
 

@@ -30,15 +30,51 @@ import type {
 } from '../_shared/types.ts'
 import { runTechnicalChecks } from './modules/technical.ts'
 import { runOnpageChecks } from './modules/onpage.ts'
+import { runGoogleJapanChecks } from './modules/google-japan.ts'
+import { runYahooJapanChecks } from './modules/yahoo-japan.ts'
+import { runBacklinkChecks } from './modules/backlink.ts'
+import { generateAISummary } from './modules/ai-summary.ts'
 import { calculateScores } from './scoring.ts'
 
 interface RequestBody {
   url?: string
 }
 
-function errorResponse(status: number, code: string, message: string): Response {
+// ────────────────────────────────────────────────────────────
+// レート制限 (spec §13)
+// In-memory Map for demo. 本番は Supabase KV / Redis に置き換え。
+// IP 別 3 回/時間。
+// ────────────────────────────────────────────────────────────
+interface RateBucket { count: number; resetAt: number }
+const rateBuckets = new Map<string, RateBucket>()
+const RATE_LIMIT_PER_HOUR = 3
+const RATE_WINDOW_MS = 60 * 60 * 1000
+
+function extractIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff) return xff.split(',')[0].trim()
+  return req.headers.get('cf-connecting-ip')
+    ?? req.headers.get('x-real-ip')
+    ?? 'unknown'
+}
+
+function checkRateLimit(ip: string): { ok: true } | { ok: false; resetAt: number } {
+  const now = Date.now()
+  const bucket = rateBuckets.get(ip)
+  if (!bucket || bucket.resetAt < now) {
+    rateBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
+    return { ok: true }
+  }
+  if (bucket.count >= RATE_LIMIT_PER_HOUR) {
+    return { ok: false, resetAt: bucket.resetAt }
+  }
+  bucket.count += 1
+  return { ok: true }
+}
+
+function errorResponse(status: number, code: string, message: string, extra?: Record<string, unknown>): Response {
   return new Response(
-    JSON.stringify({ error: { code, message } }),
+    JSON.stringify({ error: { code, message, ...extra } }),
     {
       status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -60,6 +96,16 @@ export default async function handler(req: Request): Promise<Response> {
   }
   if (req.method !== 'POST') {
     return errorResponse(405, 'METHOD_NOT_ALLOWED', 'POST のみ受け付けます')
+  }
+
+  // ─── レート制限チェック (spec §13) ──────────────────────────
+  const ip = extractIp(req)
+  const rate = checkRateLimit(ip)
+  if (!rate.ok) {
+    const minutes = Math.ceil((rate.resetAt - Date.now()) / 60000)
+    return errorResponse(429, 'RATE_LIMITED',
+      `1 時間あたりの診断回数 (${RATE_LIMIT_PER_HOUR} 回) を超えました。${minutes} 分後に再度お試しください。`,
+      { resetAt: rate.resetAt })
   }
 
   // ─── 入力 ────────────────────────────────────────────────────
@@ -100,14 +146,13 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // ─── 各 module の診断 ──────────────────────────────────────
-  // Phase 2: Module A (テクニカル) + B (オンページ) 接続済み。
-  // Phase 3: C (Google) / D (Yahoo) / E (被リンク) 接続予定。
+  // Phase 3: Module A〜E 全接続。Module F (AI サマリー) も下で接続。
   const [technical, onpage, google, yahoo, backlink] = await Promise.all([
     runTechnicalChecks(normalizedUrl, html),
     runOnpageChecks(normalizedUrl, html),
-    Promise.resolve<TechnicalCheckResult[]>([]),   // Phase 3: runGoogleJapanChecks
-    Promise.resolve<TechnicalCheckResult[]>([]),   // Phase 3: runYahooJapanChecks
-    Promise.resolve<TechnicalCheckResult[]>([]),   // Phase 3: runBacklinkChecks
+    runGoogleJapanChecks(normalizedUrl, html),
+    runYahooJapanChecks(normalizedUrl, html),
+    runBacklinkChecks(normalizedUrl),
   ])
 
   const allItems: DiagnosisItem[] = [
@@ -120,19 +165,20 @@ export default async function handler(req: Request): Promise<Response> {
 
   // ─── スコア ─────────────────────────────────────────────
   const scores: ScoreBreakdown = calculateScores(allItems)
-
-  // ─── AI サマリー (Phase 3 で実装) ─────────────────────────
-  // const { summary, quickWins } = await generateAISummary(...)
   const criticalCount = allItems.filter(i => i.level === 'critical').length
   const warningCount  = allItems.filter(i => i.level === 'warning').length
-  const summary =
-    `${extractDomain(normalizedUrl)} の診断が完了しました。` +
-    `総合 ${scores.total}/100(Google ${scores.google} / Yahoo ${scores.yahoo})。` +
-    `重大 ${criticalCount} 件・警告 ${warningCount} 件を検出しました。`
-  const quickWins: string[] = allItems
-    .filter(i => i.level === 'critical')
-    .slice(0, 3)
-    .map(i => `${i.title}:${i.fixSuggestion.split('\n')[0]}`)
+
+  // ─── AI サマリー (Phase 3 完了) ──────────────────────────
+  const ai = await generateAISummary(
+    normalizedUrl,
+    allItems,
+    scores.google,
+    scores.yahoo,
+    scores.total,
+  )
+  const summary = ai.summary
+  const quickWins = ai.quickWins
+  void extractDomain  // template fallback では使わなくなったが re-export 維持
 
   // ─── DB 保存 (Phase 4) ───────────────────────────────────
   // await saveDiagnosisSession(sessionId, normalizedUrl, scores, allItems, summary, quickWins)
