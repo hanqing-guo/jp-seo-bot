@@ -1,172 +1,45 @@
-// JP SEO Bot — store types. JAPAN_SPEC §I の型化版。
+// JP SEO Bot v2 — 3 画面 MVP 用の最小型定義
 
-export interface Site {
-  id: string
-  name: string
-  url: string
-  industry: string
-  language: 'ja' | 'en' | 'zh'
-  createdAt: string
+export type DifficultyTier = 'easy' | 'medium' | 'hard'
+
+export interface MonthlyTask {
+  /** 1-indexed (1 = 開始月, 2 = 2 ヶ月目, …) */
+  monthNumber: number
+  /** タスクの短い説明 */
+  label: string
+  /** 月内の予算配分(円) */
+  budgetYen: number
+  status: 'planned' | 'in_progress' | 'done'
+}
+
+export interface RankSnapshot {
+  date: string      // YYYY-MM-DD
+  google: number | null
+  yahoo: number | null
 }
 
 export interface Keyword {
   id: string
-  siteId: string
   keyword: string
-  searchVolume: number
+  /** KD 0-100 */
   difficulty: number
-  rank: number | null
-  trend: number[]
-  intent: 'informational' | 'navigational' | 'commercial' | 'transactional'
-  cluster: string
-  updatedAt: string
-}
-
-export interface Article {
-  id: string
-  siteId: string
-  title: string
-  targetKeyword: string
-  contentHtml: string
-  contentMd: string
-  metaDescription: string
-  status: 'draft' | 'in_review' | 'published'
-  wordCount: number
-  score?: number
-  publishedAt?: string
+  tier: DifficultyTier
+  /** 1 ページ目到達までの目標月数(3 / 6 / 10) */
+  targetMonths: number
+  /** 月額予算(円) */
+  monthlyBudgetYen: number
+  /** 開始月から経過した月数 */
+  elapsedMonths: number
+  /** 今月実行中のタスク */
+  currentTaskLabel: string
+  /** 月別タスク全件(履歴 + 予定) */
+  monthlyTasks: MonthlyTask[]
+  /** 直近の Google Japan 順位 */
+  googleRank: number | null
+  /** 直近の Yahoo Japan 順位 */
+  yahooRank: number | null
+  /** 順位履歴(直近 12 ヶ月分) */
+  rankHistory: RankSnapshot[]
+  /** 追加日 ISO */
   createdAt: string
-}
-
-export interface RankSnapshot {
-  date: string
-  keyword: string
-  rank: number
-  url: string
-}
-
-export interface AuditIssue {
-  id: string
-  category: 'technical' | 'on-page' | 'content' | 'mobile' | 'speed'
-  severity: 'critical' | 'warning' | 'info'
-  title: string
-  description: string
-  affectedPages: number
-}
-
-export interface Competitor {
-  id: string
-  domain: string
-  dr: number
-  organicTraffic: number
-  organicKeywords: number
-  topKeywords: string[]
-  overlap: number
-}
-
-export interface BacklinkSource {
-  id: string
-  name: string
-  domain: string
-  dr: number
-  type: string
-  seoStrength: 'low' | 'medium' | 'high' | 'very_high' | 'critical'
-  notes: string
-  linkType: 'dofollow' | 'nofollow' | 'nofollow_mostly' | 'mixed'
-  freeAvailable: boolean
-  estimatedCost?: string
-  url: string
-  category:
-    | 'blog'
-    | 'press_release'
-    | 'comparison'
-    | 'portal'
-    | 'community'
-    | 'authoritative'
-  industry?: string[]
-  status: 'not_registered' | 'in_progress' | 'registered' | 'failed'
-  registeredAt?: string
-}
-
-export interface MeoChecklist {
-  hasBusinessName: boolean
-  hasAddress: boolean
-  hasPhone: boolean
-  hasWebsite: boolean
-  hasBusinessHours: boolean
-  hasCategory: boolean
-  hasJapaneseDescription: boolean
-  hasPhotos: boolean
-  hasGooglePost: boolean
-  hasReviewResponse: boolean
-  hasQASection: boolean
-  hasFacilityInfo: boolean
-  hasAccessibility: boolean
-  hasServiceMenu: boolean
-  hasBookingLink: boolean
-}
-
-export interface MeoProfile {
-  siteId: string
-  businessName: string
-  gbpPlaceId?: string
-  yahooLocoUrl?: string
-  ekitenUrl?: string
-  completionScore: number
-  reviewCount: number
-  averageRating: number
-  checklist: MeoChecklist
-  lastAuditedAt: string
-  directoryRegistrations: Record<string, boolean>
-}
-
-export interface WordPressIntegration {
-  siteId: string
-  wpUrl: string
-  wpUsername: string
-  wpAppPasswordMasked: string
-  detectedSeoPlugin?: 'yoast' | 'rankmath' | 'aioseo' | 'simple_pack' | null
-  isActive: boolean
-  lastSyncedAt?: string
-}
-
-export interface WPPost {
-  id: number
-  title: string
-  status: 'publish' | 'draft' | 'pending'
-  slug: string
-  seoTitle?: string
-  seoDescription?: string
-  focusKeyword?: string
-  modifiedAt: string
-}
-
-export interface CalendarEntry {
-  id: string
-  siteId: string
-  title: string
-  targetKeyword: string
-  plannedDate: string
-  status: 'planned' | 'in_progress' | 'published' | 'cancelled'
-  seasonalTag?: string
-}
-
-export interface ContentScoreBreakdown {
-  coOccurrenceScore: number
-  readabilityScore: number
-  keywordDensity: number
-  headingStructure: number
-  wordCount: number
-  internalLinks: number
-  authorInfo: number
-  citationScore: number
-  updateDate: number
-  yakujihoCompliance: number
-  keigo: number
-  faqPresence: number
-}
-
-export interface ContentScore {
-  overall: number
-  breakdown: ContentScoreBreakdown
-  suggestions: string[]
 }

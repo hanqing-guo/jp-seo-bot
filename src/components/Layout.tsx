@@ -1,17 +1,18 @@
+// 3 画面 MVP のレイアウト:Sidebar 廃止、上部ヘッダーのみ。
+
 import { Outlet } from 'react-router-dom'
-import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 
 export default function Layout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar />
-      <div className="relative flex flex-1 flex-col overflow-hidden">
-        <Topbar />
-        <main translate="no" className="flex-1 overflow-y-auto px-6 py-6">
-          <Outlet />
-        </main>
-      </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Topbar />
+      <main translate="no" className="flex-1 px-4 md:px-8">
+        <Outlet />
+      </main>
+      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
+        JP SEO Bot — 株式会社マジック
+      </footer>
     </div>
   )
 }

@@ -1,3 +1,6 @@
+// JP SEO Bot v2 — 3 画面 MVP store
+// 単一 Keyword 配列 + localStorage 永続化のみ。
+
 import {
   createContext,
   useCallback,
@@ -7,70 +10,24 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import {
-  BACKLINK_SOURCES,
-  DEFAULT_ARTICLES,
-  DEFAULT_AUDIT_ISSUES,
-  DEFAULT_CALENDAR,
-  DEFAULT_COMPETITORS,
-  DEFAULT_KEYWORDS,
-  DEFAULT_MEO,
-  DEFAULT_SITES,
-  DEFAULT_WP,
-  DEFAULT_WP_POSTS,
-} from './mockData'
-import type {
-  Article,
-  AuditIssue,
-  BacklinkSource,
-  CalendarEntry,
-  Competitor,
-  Keyword,
-  MeoProfile,
-  Site,
-  WordPressIntegration,
-  WPPost,
-} from './types'
+import type { Keyword } from './types'
+import { SEED_KEYWORDS } from '../lib/seedData'
+import { generateMonthlyTasks, profileFromKD, tierFromKD } from '../lib/difficulty'
 
 interface AppState {
-  sites: Site[]
-  currentSiteId: string
   keywords: Keyword[]
-  articles: Article[]
-  auditIssues: AuditIssue[]
-  competitors: Competitor[]
-  backlinks: BacklinkSource[]
-  meo: Record<string, MeoProfile>
-  wp: Record<string, WordPressIntegration>
-  wpPosts: WPPost[]
-  calendar: CalendarEntry[]
 }
 
-const STORAGE_KEY = 'jp-seo-bot:store'
+const STORAGE_KEY = 'jp-seo-bot:store-v2'
 
 const initialState: AppState = {
-  sites: DEFAULT_SITES,
-  currentSiteId: DEFAULT_SITES[0]?.id ?? '',
-  keywords: DEFAULT_KEYWORDS,
-  articles: DEFAULT_ARTICLES,
-  auditIssues: DEFAULT_AUDIT_ISSUES,
-  competitors: DEFAULT_COMPETITORS,
-  backlinks: BACKLINK_SOURCES,
-  meo: DEFAULT_MEO,
-  wp: DEFAULT_WP,
-  wpPosts: DEFAULT_WP_POSTS,
-  calendar: DEFAULT_CALENDAR,
+  keywords: SEED_KEYWORDS,
 }
 
 interface StoreCtx extends AppState {
-  setCurrentSiteId: (id: string) => void
-  addSite: (s: Omit<Site, 'id' | 'createdAt'>) => void
-  upsertArticle: (article: Article) => void
-  setBacklinkStatus: (id: string, status: BacklinkSource['status']) => void
-  updateMeo: (siteId: string, patch: Partial<MeoProfile>) => void
-  setWp: (siteId: string, wp: WordPressIntegration | null) => void
-  upsertCalendarEntry: (entry: CalendarEntry) => void
-  deleteCalendarEntry: (id: string) => void
+  addKeyword: (input: { keyword: string; difficulty: number }) => Keyword
+  deleteKeyword: (id: string) => void
+  updateTaskStatus: (kwId: string, monthNumber: number, status: 'planned' | 'in_progress' | 'done') => void
   reset: () => void
 }
 
@@ -95,83 +52,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   }, [state])
 
-  const setCurrentSiteId = useCallback((id: string) => {
-    setState(s => ({ ...s, currentSiteId: id }))
+  const addKeyword = useCallback<StoreCtx['addKeyword']>(({ keyword, difficulty }) => {
+    const tier = tierFromKD(difficulty)
+    const profile = profileFromKD(difficulty)
+    const tasks = generateMonthlyTasks(tier)
+    tasks[0].status = 'in_progress'
+
+    const kw: Keyword = {
+      id: 'kw-' + Math.random().toString(36).slice(2, 10),
+      keyword: keyword.trim(),
+      difficulty,
+      tier,
+      targetMonths: profile.targetMonths,
+      monthlyBudgetYen: profile.monthlyBudgetYen,
+      elapsedMonths: 1,
+      currentTaskLabel: tasks[0].label,
+      monthlyTasks: tasks,
+      googleRank: null,
+      yahooRank: null,
+      rankHistory: [],
+      createdAt: new Date().toISOString(),
+    }
+
+    setState(prev => ({ ...prev, keywords: [kw, ...prev.keywords] }))
+    return kw
   }, [])
 
-  const addSite = useCallback((s: Omit<Site, 'id' | 'createdAt'>) => {
-    setState(prev => {
-      const site: Site = {
-        ...s,
-        id: 'site-' + Math.random().toString(36).slice(2, 8),
-        createdAt: new Date().toISOString(),
-      }
-      return { ...prev, sites: [...prev.sites, site], currentSiteId: site.id }
-    })
+  const deleteKeyword = useCallback((id: string) => {
+    setState(prev => ({ ...prev, keywords: prev.keywords.filter(k => k.id !== id) }))
   }, [])
 
-  const upsertArticle = useCallback((article: Article) => {
-    setState(prev => {
-      const exists = prev.articles.some(a => a.id === article.id)
-      const articles = exists
-        ? prev.articles.map(a => (a.id === article.id ? article : a))
-        : [article, ...prev.articles]
-      return { ...prev, articles }
-    })
-  }, [])
-
-  const setBacklinkStatus = useCallback((id: string, status: BacklinkSource['status']) => {
+  const updateTaskStatus = useCallback((kwId: string, monthNumber: number, status: 'planned' | 'in_progress' | 'done') => {
     setState(prev => ({
       ...prev,
-      backlinks: prev.backlinks.map(b =>
-        b.id === id
-          ? {
-              ...b,
-              status,
-              registeredAt: status === 'registered' ? new Date().toISOString() : b.registeredAt,
-            }
-          : b,
+      keywords: prev.keywords.map(k =>
+        k.id !== kwId
+          ? k
+          : {
+              ...k,
+              monthlyTasks: k.monthlyTasks.map(t =>
+                t.monthNumber === monthNumber ? { ...t, status } : t,
+              ),
+            },
       ),
     }))
-  }, [])
-
-  const updateMeo = useCallback((siteId: string, patch: Partial<MeoProfile>) => {
-    setState(prev => {
-      const existing = prev.meo[siteId]
-      if (!existing) return prev
-      return {
-        ...prev,
-        meo: {
-          ...prev.meo,
-          [siteId]: { ...existing, ...patch, checklist: { ...existing.checklist, ...(patch.checklist ?? {}) } },
-        },
-      }
-    })
-  }, [])
-
-  const setWp = useCallback((siteId: string, wp: WordPressIntegration | null) => {
-    setState(prev => {
-      const next = { ...prev.wp }
-      if (wp === null) delete next[siteId]
-      else next[siteId] = wp
-      return { ...prev, wp: next }
-    })
-  }, [])
-
-  const upsertCalendarEntry = useCallback((entry: CalendarEntry) => {
-    setState(prev => {
-      const exists = prev.calendar.some(e => e.id === entry.id)
-      return {
-        ...prev,
-        calendar: exists
-          ? prev.calendar.map(e => (e.id === entry.id ? entry : e))
-          : [...prev.calendar, entry],
-      }
-    })
-  }, [])
-
-  const deleteCalendarEntry = useCallback((id: string) => {
-    setState(prev => ({ ...prev, calendar: prev.calendar.filter(e => e.id !== id) }))
   }, [])
 
   const reset = useCallback(() => {
@@ -180,30 +104,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<StoreCtx>(
-    () => ({
-      ...state,
-      setCurrentSiteId,
-      addSite,
-      upsertArticle,
-      setBacklinkStatus,
-      updateMeo,
-      setWp,
-      upsertCalendarEntry,
-      deleteCalendarEntry,
-      reset,
-    }),
-    [
-      state,
-      setCurrentSiteId,
-      addSite,
-      upsertArticle,
-      setBacklinkStatus,
-      updateMeo,
-      setWp,
-      upsertCalendarEntry,
-      deleteCalendarEntry,
-      reset,
-    ],
+    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, reset }),
+    [state, addKeyword, deleteKeyword, updateTaskStatus, reset],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -215,7 +117,7 @@ export function useStore() {
   return ctx
 }
 
-export function useCurrentSite(): Site | undefined {
-  const { sites, currentSiteId } = useStore()
-  return sites.find(s => s.id === currentSiteId)
+export function useKeyword(id: string | undefined): Keyword | undefined {
+  const { keywords } = useStore()
+  return id ? keywords.find(k => k.id === id) : undefined
 }
