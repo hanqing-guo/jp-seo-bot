@@ -77,9 +77,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="月間クリック" value="12,500" delta={{ value: 5.9, suffix: '%' }} hint="vs 先月" icon={<Eye className="size-5" />} />
-        <Stat label="追跡キーワード" value={siteKw.length} delta={{ value: 4, suffix: '個' }} hint="今月追加" icon={<Search className="size-5" />} />
-        <Stat label="Top10 ランキング" value={top10} delta={{ value: 2, suffix: '位' }} hint="vs 先月" icon={<TrendingUp className="size-5" />} />
-        <Stat label="登録済 被リンク先" value={`${registered} / ${backlinks.length}`} delta={{ value: 12, suffix: '%' }} hint="進捗" icon={<Link2 className="size-5" />} />
+        <Stat label="追跡キーワード" value={`${siteKw.length} 件`} delta={{ value: 1, suffix: ' 件' }} hint="今月追加" icon={<Search className="size-5" />} />
+        <Stat label="TOP10 入りキーワード" value={`${top10} 件`} delta={{ value: 0, suffix: ' 件' }} hint="vs 先月" icon={<TrendingUp className="size-5" />} />
+        <Stat label="登録済 被リンク先" value={`${registered} / ${backlinks.length} 件`} delta={{ value: 12, suffix: '%' }} hint="進捗" icon={<Link2 className="size-5" />} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">

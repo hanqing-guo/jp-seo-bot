@@ -166,7 +166,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, lang)
-    document.documentElement.lang = lang
+    // 注:html[lang] を動的に "zh"/"en" に変えると Chrome auto-translate が
+    // 「日本語/中文」→「日本人/中国人」のように誤起動するため "ja" 固定。
+    // 実 i18n は useT() で完結する。
   }, [lang])
 
   const setLang = useCallback((l: Lang) => setLangState(l), [])

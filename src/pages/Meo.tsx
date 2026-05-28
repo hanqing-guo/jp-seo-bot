@@ -16,6 +16,17 @@ import { useStore } from '../store/StoreProvider'
 import { useT } from '../lib/i18n'
 import { JAPAN_LOCAL_DIRECTORIES } from '../store/mockData'
 
+// サイト業種 (site.industry; 自由文字列) と
+// JAPAN_LOCAL_DIRECTORIES.industry ('all'|'food'|'tech'|'hotel') のマッチング。
+function matchIndustry(siteIndustry: string, dirIndustry: string): boolean {
+  if (dirIndustry === 'all') return true
+  const ind = siteIndustry.toLowerCase()
+  if (dirIndustry === 'food' && /飲食|food|レストラン|カフェ/.test(ind)) return true
+  if (dirIndustry === 'tech' && /(saas|tech|it|btob|エンジニア|開発)/.test(ind)) return true
+  if (dirIndustry === 'hotel' && /(宿泊|ホテル|hotel|旅館)/.test(ind)) return true
+  return false
+}
+
 const CHECKLIST_LABELS: Record<string, { label: string; required: boolean; jp: boolean }> = {
   hasBusinessName: { label: '事業者名', required: true, jp: false },
   hasAddress: { label: '所在地', required: true, jp: false },
@@ -172,7 +183,9 @@ export default function Meo() {
       ) : null}
 
       <div className="card mt-4">
-        <SectionTitle hint="JAPAN_SPEC §C.2 業種別ローカルディレクトリ">日本主要ローカルディレクトリ</SectionTitle>
+        <SectionTitle hint={`JAPAN_SPEC §C.2 業種別ローカルディレクトリ — 業種「${site?.industry ?? '—'}」でフィルタ`}>
+          日本主要ローカルディレクトリ
+        </SectionTitle>
         <table className="w-full">
           <thead>
             <tr>
@@ -184,7 +197,7 @@ export default function Meo() {
             </tr>
           </thead>
           <tbody>
-            {JAPAN_LOCAL_DIRECTORIES.map(d => {
+            {JAPAN_LOCAL_DIRECTORIES.filter(d => matchIndustry(site?.industry ?? '', d.industry)).map(d => {
               const registered = !!profile.directoryRegistrations[d.id]
               return (
                 <tr key={d.id} className="border-t border-slate-100">

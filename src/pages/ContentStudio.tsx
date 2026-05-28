@@ -56,7 +56,9 @@ export default function ContentStudio() {
   const [text, setText] = useState(SAMPLE_TEXT)
   const [targetKeyword, setTargetKeyword] = useState('SEO 対策 ツール')
   const [score, setScore] = useState<ContentScore | null>(null)
-  const [loading, setLoading] = useState(false)
+  // 初回マウント時はスコア計算完了までローディング状態にし、
+  // 「総合 0」と誤表示されないようにする(kuromoji 初回ロードで数秒)。
+  const [loading, setLoading] = useState(true)
   const [generated, setGenerated] = useState(false)
 
   const wordCount = useMemo(() => text.replace(/\s/g, '').length, [text])
@@ -167,14 +169,16 @@ export default function ContentStudio() {
               <div
                 className={
                   'flex size-24 items-center justify-center rounded-full border-8 ' +
-                  ((score?.overall ?? 0) >= 80
-                    ? 'border-emerald-500 text-emerald-700'
-                    : (score?.overall ?? 0) >= 60
-                      ? 'border-amber-500 text-amber-700'
-                      : 'border-rose-500 text-rose-700')
+                  (score === null
+                    ? 'border-slate-200 text-slate-400'
+                    : score.overall >= 80
+                      ? 'border-emerald-500 text-emerald-700'
+                      : score.overall >= 60
+                        ? 'border-amber-500 text-amber-700'
+                        : 'border-rose-500 text-rose-700')
                 }
               >
-                <span className="text-2xl font-bold">{loading ? '…' : score?.overall ?? 0}</span>
+                <span className="text-2xl font-bold">{loading || score === null ? '…' : score.overall}</span>
               </div>
               <div className="flex-1 space-y-1.5">
                 {score

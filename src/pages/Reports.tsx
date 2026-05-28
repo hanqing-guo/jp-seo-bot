@@ -4,11 +4,20 @@ import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
 import { useT } from '../lib/i18n'
 
+// クリック・Top10 数・累計公開記事数は store のサンプルデータと一致させる。
+// 最終月 (2026年5月) は「今月の生成待ち」として履歴行を出さない。
 const HISTORY = [
-  { id: 'rep-1', period: '2026年4月', generatedAt: '2026-05-02', clicks: 11800, top10: 24, articles: 6 },
-  { id: 'rep-2', period: '2026年3月', generatedAt: '2026-04-02', clicks: 10200, top10: 22, articles: 5 },
-  { id: 'rep-3', period: '2026年2月', generatedAt: '2026-03-02', clicks: 9300, top10: 20, articles: 4 },
-  { id: 'rep-4', period: '2026年1月', generatedAt: '2026-02-02', clicks: 8900, top10: 18, articles: 4 },
+  { id: 'rep-12', period: '2026年4月', generatedAt: '2026-05-02', clicks: 11800, top10: 2, articles: 2 },
+  { id: 'rep-11', period: '2026年3月', generatedAt: '2026-04-02', clicks: 10200, top10: 2, articles: 2 },
+  { id: 'rep-10', period: '2026年2月', generatedAt: '2026-03-02', clicks: 9300, top10: 2, articles: 2 },
+  { id: 'rep-9', period: '2026年1月', generatedAt: '2026-02-02', clicks: 8900, top10: 1, articles: 1 },
+  { id: 'rep-8', period: '2025年12月', generatedAt: '2026-01-02', clicks: 8400, top10: 1, articles: 1 },
+  { id: 'rep-7', period: '2025年11月', generatedAt: '2025-12-02', clicks: 7100, top10: 1, articles: 1 },
+  { id: 'rep-6', period: '2025年10月', generatedAt: '2025-11-02', clicks: 6200, top10: 1, articles: 1 },
+  { id: 'rep-5', period: '2025年9月', generatedAt: '2025-10-02', clicks: 5600, top10: 1, articles: 1 },
+  { id: 'rep-4', period: '2025年8月', generatedAt: '2025-09-02', clicks: 4800, top10: 1, articles: 0 },
+  { id: 'rep-3', period: '2025年7月', generatedAt: '2025-08-02', clicks: 5100, top10: 0, articles: 0 },
+  { id: 'rep-2', period: '2025年6月', generatedAt: '2025-07-02', clicks: 4200, top10: 0, articles: 0 },
 ]
 
 export default function Reports() {
@@ -51,7 +60,7 @@ export default function Reports() {
       </div>
 
       <div className="card">
-        <SectionTitle hint="過去 12 ヶ月分">レポート履歴</SectionTitle>
+        <SectionTitle hint={`過去 ${HISTORY.length} ヶ月分(本月分は上部「今月のレポートを生成」ボタンから)`}>レポート履歴</SectionTitle>
         <table className="w-full">
           <thead>
             <tr>
