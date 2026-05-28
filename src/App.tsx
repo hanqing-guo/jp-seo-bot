@@ -13,6 +13,7 @@ import Meo from './pages/Meo'
 import WordPress from './pages/WordPress'
 import ContentCalendar from './pages/ContentCalendar'
 import SchemaGenerator from './pages/SchemaGenerator'
+import Diagnosis from './pages/Diagnosis'
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="wordpress" element={<WordPress />} />
         <Route path="calendar" element={<ContentCalendar />} />
         <Route path="schema" element={<SchemaGenerator />} />
+        <Route path="diagnosis" element={<Diagnosis />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

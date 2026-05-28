@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Stethoscope,
   Tag,
 } from 'lucide-react'
 import { useT } from '../lib/i18n'
@@ -36,6 +37,7 @@ const CORE: Item[] = [
 ]
 
 const JP: Item[] = [
+  { to: '/diagnosis', labelKey: 'nav.diagnosis', Icon: Stethoscope },
   { to: '/backlinks', labelKey: 'nav.backlinks', Icon: Link2 },
   { to: '/meo', labelKey: 'nav.meo', Icon: MapPin },
   { to: '/wordpress', labelKey: 'nav.wordpress', Icon: Globe2 },

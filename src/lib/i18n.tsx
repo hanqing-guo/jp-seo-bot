@@ -25,6 +25,7 @@ const DICT: Dict = {
   'nav.wordpress': { ja: 'WordPress 連携', en: 'WordPress', zh: 'WordPress 接入' },
   'nav.calendar': { ja: 'コンテンツカレンダー', en: 'Content Calendar', zh: '内容日历' },
   'nav.schema': { ja: 'Schema ジェネレーター', en: 'Schema Generator', zh: 'Schema 生成器' },
+  'nav.diagnosis': { ja: '無料診断', en: 'Free Diagnosis', zh: '免费诊断' },
 
   'group.core': { ja: 'コア機能', en: 'Core', zh: '核心功能' },
   'group.jp': { ja: '日本市場特化', en: 'Japan-specific', zh: '日本市场专属' },
@@ -90,6 +91,47 @@ const DICT: Dict = {
   'page.calendar.subtitle': { ja: 'JAPAN_CONTENT_CALENDAR (季節イベント) と連動した発信スケジュール', en: 'Publishing schedule tied to JP seasonal events', zh: '与日本季节事件联动的发布日程' },
   'page.schema.title': { ja: 'Schema Markup ジェネレーター', en: 'Schema Markup Generator', zh: 'Schema 标记生成器' },
   'page.schema.subtitle': { ja: '日本市場で効果的な 5 種類の JSON-LD を生成', en: 'Generate 5 JSON-LD types effective in JP market', zh: '生成 5 类对日本市场有效的 JSON-LD' },
+  'page.diagnosis.title': { ja: '無料 SEO 診断', en: 'Free SEO Diagnosis', zh: '免费 SEO 诊断' },
+  'page.diagnosis.subtitle': {
+    ja: 'Google Japan + Yahoo Japan の両エンジン視点で 30 秒以内に SEO 健康状態を可視化',
+    en: 'Visualize SEO health in 30s — Google Japan + Yahoo Japan dual engine',
+    zh: '30 秒可视化网站 SEO 健康度 — Google 日本 + Yahoo 日本双引擎',
+  },
+  'diagnosis.input.placeholder': {
+    ja: 'https://example.co.jp',
+    en: 'https://example.com',
+    zh: 'https://example.com',
+  },
+  'diagnosis.input.cta': {
+    ja: '無料診断スタート',
+    en: 'Start Free Diagnosis',
+    zh: '开始免费诊断',
+  },
+  'diagnosis.input.privacy': {
+    ja: '入力された URL は診断目的のみに使用します。登録不要、メールアドレス不要で結果を表示します。',
+    en: 'URL used only for diagnosis. No registration, no email required to see results.',
+    zh: '输入的 URL 仅用于诊断目的。无需注册、无需邮箱即可查看结果。',
+  },
+  'diagnosis.input.tally': {
+    ja: '累計 12,480 サイトを診断済み',
+    en: '12,480 sites diagnosed to date',
+    zh: '累计已诊断 12,480 个网站',
+  },
+  'diagnosis.input.required': {
+    ja: 'URL を入力してください',
+    en: 'Please enter a URL',
+    zh: '请输入 URL',
+  },
+  'diagnosis.input.invalid': {
+    ja: '有効な URL を入力してください (例: example.co.jp)',
+    en: 'Please enter a valid URL (e.g. example.com)',
+    zh: '请输入有效的 URL(例如 example.com)',
+  },
+  'diagnosis.phase1.notice': {
+    ja: 'Phase 1 (スケルトン): URL 受付の動作のみ確認できます。実際の診断モジュール (Module A–F) は Phase 2-3 で実装します。',
+    en: 'Phase 1 (skeleton): URL intake only. Diagnosis modules (A–F) implemented in Phase 2-3.',
+    zh: 'Phase 1(骨架):仅 URL 输入流程。诊断模块(A–F)将在 Phase 2-3 实施。',
+  },
 
   // ===== Search intent =====
   'intent.informational': { ja: '情報', en: 'Info', zh: '信息' },
