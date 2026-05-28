@@ -26,7 +26,11 @@ import type {
   DiagnosisItem,
   DiagnosisResponse,
   ScoreBreakdown,
+  TechnicalCheckResult,
 } from '../_shared/types.ts'
+import { runTechnicalChecks } from './modules/technical.ts'
+import { runOnpageChecks } from './modules/onpage.ts'
+import { calculateScores } from './scoring.ts'
 
 interface RequestBody {
   url?: string
@@ -42,11 +46,12 @@ function errorResponse(status: number, code: string, message: string): Response 
   )
 }
 
-function placeholderScores(): ScoreBreakdown {
-  return {
-    total: 0, google: 0, yahoo: 0,
-    technical: 0, onpage: 0, content: 0, backlink: 0, mobile: 0,
-  }
+function tagItems(
+  items: TechnicalCheckResult[],
+  engine: DiagnosisItem['engine'],
+  category: string,
+): DiagnosisItem[] {
+  return items.map(i => ({ ...i, engine, category }))
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -94,25 +99,40 @@ export default async function handler(req: Request): Promise<Response> {
     return errorResponse(500, 'INTERNAL_ERROR', '内部エラーが発生しました')
   }
 
-  // Phase 1: html はパース基盤 (parseHTML) で利用準備済み。Phase 2 module で実消費。
-  void html
-
-  // ─── 各 module の診断 (Phase 2-3 で実装) ──────────────────
-  // 並列実行で速度最適化を意図した骨組み。現在は全 module が空配列を返す。
+  // ─── 各 module の診断 ──────────────────────────────────────
+  // Phase 2: Module A (テクニカル) + B (オンページ) 接続済み。
+  // Phase 3: C (Google) / D (Yahoo) / E (被リンク) 接続予定。
   const [technical, onpage, google, yahoo, backlink] = await Promise.all([
-    Promise.resolve<DiagnosisItem[]>([]),  // runTechnicalChecks(normalizedUrl, html)
-    Promise.resolve<DiagnosisItem[]>([]),  // runOnpageChecks(normalizedUrl, html)
-    Promise.resolve<DiagnosisItem[]>([]),  // runGoogleJapanChecks(normalizedUrl, html)
-    Promise.resolve<DiagnosisItem[]>([]),  // runYahooJapanChecks(normalizedUrl, html)
-    Promise.resolve<DiagnosisItem[]>([]),  // runBacklinkChecks(normalizedUrl)
+    runTechnicalChecks(normalizedUrl, html),
+    runOnpageChecks(normalizedUrl, html),
+    Promise.resolve<TechnicalCheckResult[]>([]),   // Phase 3: runGoogleJapanChecks
+    Promise.resolve<TechnicalCheckResult[]>([]),   // Phase 3: runYahooJapanChecks
+    Promise.resolve<TechnicalCheckResult[]>([]),   // Phase 3: runBacklinkChecks
   ])
 
-  const allItems: DiagnosisItem[] = [...technical, ...onpage, ...google, ...yahoo, ...backlink]
+  const allItems: DiagnosisItem[] = [
+    ...tagItems(technical, 'common', 'テクニカル'),
+    ...tagItems(onpage,    'common', 'オンページ'),
+    ...tagItems(google,    'google', 'Google Japan'),
+    ...tagItems(yahoo,     'yahoo',  'Yahoo Japan'),
+    ...tagItems(backlink,  'common', '被リンク'),
+  ]
 
-  // ─── スコア + AI サマリー (Phase 2-3 で実装) ───────────────
-  const scores = placeholderScores()
-  const summary = `Phase 1 (スケルトン): ${extractDomain(normalizedUrl)} の診断モジュールは Phase 2 以降で実装されます。`
-  const quickWins: string[] = []
+  // ─── スコア ─────────────────────────────────────────────
+  const scores: ScoreBreakdown = calculateScores(allItems)
+
+  // ─── AI サマリー (Phase 3 で実装) ─────────────────────────
+  // const { summary, quickWins } = await generateAISummary(...)
+  const criticalCount = allItems.filter(i => i.level === 'critical').length
+  const warningCount  = allItems.filter(i => i.level === 'warning').length
+  const summary =
+    `${extractDomain(normalizedUrl)} の診断が完了しました。` +
+    `総合 ${scores.total}/100(Google ${scores.google} / Yahoo ${scores.yahoo})。` +
+    `重大 ${criticalCount} 件・警告 ${warningCount} 件を検出しました。`
+  const quickWins: string[] = allItems
+    .filter(i => i.level === 'critical')
+    .slice(0, 3)
+    .map(i => `${i.title}:${i.fixSuggestion.split('\n')[0]}`)
 
   // ─── DB 保存 (Phase 4) ───────────────────────────────────
   // await saveDiagnosisSession(sessionId, normalizedUrl, scores, allItems, summary, quickWins)
@@ -124,8 +144,8 @@ export default async function handler(req: Request): Promise<Response> {
     items: allItems,
     summary,
     quickWins,
-    criticalCount: allItems.filter(i => i.level === 'critical').length,
-    warningCount:  allItems.filter(i => i.level === 'warning').length,
+    criticalCount,
+    warningCount,
   }
 
   return new Response(JSON.stringify(responseBody), {

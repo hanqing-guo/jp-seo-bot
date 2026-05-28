@@ -55,4 +55,22 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  build: {
+    // bundle audit 2026-05-29: main chunk が 740kB (gzip 213kB) と大きく
+    // Vite から warning が出ていた。vendor を機能別に分割して並列 fetch +
+    // ブラウザ cache hit rate を上げる。recharts (約 300kB) / lucide (50kB)
+    // / react ecosystem を別 chunk にすると、ページ間で同じ vendor が
+    // 再ダウンロードされない。
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'recharts-vendor': ['recharts'],
+          'icons-vendor': ['lucide-react'],
+          'utils-vendor': ['clsx', 'date-fns'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 })
