@@ -53,6 +53,16 @@ const DICT: Dict = {
   'topbar.lang': { ja: '言語', en: 'Language', zh: '语言' },
   'topbar.site': { ja: 'サイト', en: 'Site', zh: '站点' },
   'topbar.addsite': { ja: '新規サイト追加', en: 'Add site', zh: '新增站点' },
+
+  // Weekday headers (calendar) — Chrome 自動翻訳が「木→树」等の誤訳を引き起こすため
+  // i18n + translate="no" の二段防御で対応
+  'weekday.sun': { ja: '日', en: 'Sun', zh: '日' },
+  'weekday.mon': { ja: '月', en: 'Mon', zh: '一' },
+  'weekday.tue': { ja: '火', en: 'Tue', zh: '二' },
+  'weekday.wed': { ja: '水', en: 'Wed', zh: '三' },
+  'weekday.thu': { ja: '木', en: 'Thu', zh: '四' },
+  'weekday.fri': { ja: '金', en: 'Fri', zh: '五' },
+  'weekday.sat': { ja: '土', en: 'Sat', zh: '六' },
 }
 
 interface I18nCtx {

@@ -3,8 +3,11 @@ import { CalendarPlus, ChevronLeft, ChevronRight, Sparkles, Trash2 } from 'lucid
 import PageHeader from '../components/PageHeader'
 import SectionTitle from '../components/SectionTitle'
 import { useStore } from '../store/StoreProvider'
+import { useT } from '../lib/i18n'
 import { JAPAN_CONTENT_CALENDAR } from '../store/mockData'
 import type { CalendarEntry } from '../store/types'
+
+const WEEKDAY_KEYS = ['weekday.sun', 'weekday.mon', 'weekday.tue', 'weekday.wed', 'weekday.thu', 'weekday.fri', 'weekday.sat'] as const
 
 const STATUS_BADGE: Record<CalendarEntry['status'], string> = {
   planned: 'badge-gray',
@@ -34,6 +37,7 @@ function weekdayOfFirst(year: number, month: number) {
 
 export default function ContentCalendar() {
   const { calendar, currentSiteId, upsertCalendarEntry, deleteCalendarEntry } = useStore()
+  const { t } = useT()
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -132,9 +136,9 @@ export default function ContentCalendar() {
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
-          {['日', '月', '火', '水', '木', '金', '土'].map(d => (
-            <div key={d} className="bg-slate-50 px-2 py-1 text-center text-[11px] font-semibold text-slate-500">{d}</div>
+        <div translate="no" className="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+          {WEEKDAY_KEYS.map(key => (
+            <div key={key} className="bg-slate-50 px-2 py-1 text-center text-[11px] font-semibold text-slate-500">{t(key)}</div>
           ))}
           {cells.map((day, i) => {
             const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : null
