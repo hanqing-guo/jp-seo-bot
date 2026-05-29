@@ -25,6 +25,9 @@ export interface GenerateOptions {
 }
 
 function apiBase(): string {
+  // 本番(Vercel)はフロントと同一ドメインの /api を使用。
+  // ローカル開発は .env の VITE_API_BASE(例: http://localhost:8000)。
+  if (import.meta.env.PROD) return '/api'
   return import.meta.env.VITE_API_BASE ?? ''
 }
 
