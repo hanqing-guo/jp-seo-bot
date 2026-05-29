@@ -25,8 +25,7 @@ export interface GenerateOptions {
 }
 
 function apiBase(): string {
-  const meta = import.meta as unknown as { env?: Record<string, string | undefined> }
-  return meta.env?.VITE_API_BASE ?? ''
+  return import.meta.env.VITE_API_BASE ?? ''
 }
 
 export async function generateArticles(opts: GenerateOptions): Promise<DraftArticle[]> {
