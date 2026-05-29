@@ -158,21 +158,51 @@ export function generateMonthlyTasks(tier: DifficultyTier): MonthlyTask[] {
 export function budgetBreakdown(tier: DifficultyTier): { label: string; yen: number }[] {
   if (tier === 'easy') {
     return [
-      { label: 'AI 記事生成 (2 本)', yen: 2000 },
-      { label: 'ツール代 (順位計測 等)', yen: 1000 },
+      { label: 'AI 記事の作成(2 本)', yen: 2000 },
+      { label: '順位チェックツール', yen: 1000 },
     ]
   }
   if (tier === 'medium') {
     return [
-      { label: 'AI 記事生成 (4 本)', yen: 3500 },
-      { label: '被リンク獲得施策', yen: 1500 },
-      { label: 'ツール代 (順位計測 + 共起語)', yen: 1000 },
+      { label: 'AI 記事の作成(4 本)', yen: 3500 },
+      { label: '紹介リンクの獲得', yen: 1500 },
+      { label: '順位チェックツール', yen: 1000 },
     ]
   }
   return [
-    { label: 'AI 記事生成 (8 本)', yen: 6500 },
-    { label: 'PR TIMES 配信(月 1 本)', yen: 3500 },
-    { label: '被リンク獲得施策', yen: 1500 },
-    { label: 'ツール代 (順位計測 + 共起語)', yen: 500 },
+    { label: 'AI 記事の作成(8 本)', yen: 6500 },
+    { label: 'プレスリリース配信(月 1 本)', yen: 3500 },
+    { label: '紹介リンクの獲得', yen: 1500 },
+    { label: '順位チェックツール', yen: 500 },
+  ]
+}
+
+// 顧客向け「私たちがやること」(専門用語なし・大白話)
+export function serviceFeatures(tier: DifficultyTier): string[] {
+  const base = ['毎日、Google と Yahoo の順位を自動でチェック']
+  if (tier === 'easy') {
+    return [
+      ...base,
+      'AI が SEO 記事を毎月 2 本 作成',
+      'サイト内の改善を自動で実施',
+      '毎月、わかりやすい成果レポートをお届け',
+    ]
+  }
+  if (tier === 'medium') {
+    return [
+      ...base,
+      'AI が SEO 記事を毎月 4 本 作成',
+      '他サイトからの紹介リンクを増やす',
+      'ライバルサイトの動きを監視',
+      '毎月、わかりやすい成果レポートをお届け',
+    ]
+  }
+  return [
+    ...base,
+    'AI が SEO 記事を毎月 8 本 作成',
+    '他サイトからの紹介リンクを増やす',
+    'ニュースサイトへプレスリリースを配信(月 1 本)',
+    '上位表示を強力に後押し',
+    '毎月、わかりやすい成果レポートをお届け',
   ]
 }

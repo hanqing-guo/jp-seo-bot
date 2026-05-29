@@ -72,7 +72,6 @@ function KeywordCard({ k }: { k: Keyword }) {
           <h3 className="text-lg font-bold text-slate-900 break-words">{k.keyword}</h3>
           <div className="mt-0.5 flex items-center gap-2 text-xs flex-wrap">
             <span className={`font-semibold ${profile.textClass}`}>{profile.label}</span>
-            <span className="text-slate-400">KD {k.difficulty}</span>
           </div>
         </div>
       </div>

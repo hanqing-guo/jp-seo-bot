@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react'
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
-import { TIER_PROFILES, budgetBreakdown } from '../lib/difficulty'
+import { TIER_PROFILES, budgetBreakdown, serviceFeatures } from '../lib/difficulty'
 import { generateArticles } from '../lib/aiArticle'
 import type { GeneratedArticle, Keyword, MonthlyTask } from '../store/types'
 
@@ -56,7 +56,6 @@ export default function KeywordDetail() {
         </div>
         <div className="mt-1 flex items-center gap-3 text-sm">
           <span className={`font-semibold ${profile.textClass}`}>{profile.label}</span>
-          <span className="text-slate-400">KD {kw.difficulty}/100</span>
           <span className="text-slate-400">
             目標 {profile.targetMonths} ヶ月で 1 ページ目
           </span>
@@ -64,6 +63,19 @@ export default function KeywordDetail() {
       </header>
 
       <ProgressCard kw={kw} progress={progress} profile={profile} />
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="text-sm font-bold text-slate-900 mb-3">私たちがやること</h2>
+        <ul className="space-y-2">
+          {serviceFeatures(kw.tier).map((f, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <Check className="size-3.5" />
+              </span>
+              {f}
+            </li>
+          ))}
+        </ul>
+      </section>
       <TasksCard kw={kw} onUpdateStatus={updateTaskStatus} />
       <ArticlesCard kw={kw} />
       <BudgetCard breakdown={breakdown} monthlyTotal={kw.monthlyBudgetYen} totalMonths={kw.targetMonths} />
