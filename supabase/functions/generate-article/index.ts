@@ -40,7 +40,7 @@ const ANGLES = [
   '最新トレンドと今後の展望',
 ]
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
   if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
 
@@ -195,3 +195,8 @@ function json(status: number, body: unknown): Response {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 }
+
+// エントリポイント — ローカル(`deno run`)でも Supabase Edge Function でも動く。
+//   ローカル: http://localhost:8000 で待受(`npm run api:local`)
+//   Supabase: `supabase functions deploy` 時に自動でルーティング
+Deno.serve(handler)
