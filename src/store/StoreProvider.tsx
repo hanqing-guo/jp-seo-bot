@@ -10,24 +10,29 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { Keyword } from './types'
+import type { GeneratedArticle, Keyword } from './types'
 import { SEED_KEYWORDS } from '../lib/seedData'
 import { generateMonthlyTasks, profileFromKD, tierFromKD } from '../lib/difficulty'
 
 interface AppState {
   keywords: Keyword[]
+  /** キーワード ID ごとの生成記事草稿 */
+  articles: Record<string, GeneratedArticle[]>
 }
 
 const STORAGE_KEY = 'jp-seo-bot:store-v2'
 
 const initialState: AppState = {
   keywords: SEED_KEYWORDS,
+  articles: {},
 }
 
 interface StoreCtx extends AppState {
   addKeyword: (input: { keyword: string; difficulty: number }) => Keyword
   deleteKeyword: (id: string) => void
   updateTaskStatus: (kwId: string, monthNumber: number, status: 'planned' | 'in_progress' | 'done') => void
+  addArticles: (kwId: string, drafts: { title: string; markdown: string; provider: string }[]) => void
+  deleteArticle: (kwId: string, articleId: string) => void
   reset: () => void
 }
 
@@ -98,14 +103,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const addArticles = useCallback<StoreCtx['addArticles']>((kwId, drafts) => {
+    setState(prev => {
+      const existing = prev.articles[kwId] ?? []
+      const added: GeneratedArticle[] = drafts.map(d => ({
+        id: 'art-' + Math.random().toString(36).slice(2, 10),
+        title: d.title,
+        markdown: d.markdown,
+        provider: d.provider,
+        createdAt: new Date().toISOString(),
+      }))
+      return { ...prev, articles: { ...prev.articles, [kwId]: [...added, ...existing] } }
+    })
+  }, [])
+
+  const deleteArticle = useCallback((kwId: string, articleId: string) => {
+    setState(prev => ({
+      ...prev,
+      articles: {
+        ...prev.articles,
+        [kwId]: (prev.articles[kwId] ?? []).filter(a => a.id !== articleId),
+      },
+    }))
+  }, [])
+
   const reset = useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY)
     setState(initialState)
   }, [])
 
   const value = useMemo<StoreCtx>(
-    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, reset }),
-    [state, addKeyword, deleteKeyword, updateTaskStatus, reset],
+    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, addArticles, deleteArticle, reset }),
+    [state, addKeyword, deleteKeyword, updateTaskStatus, addArticles, deleteArticle, reset],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -120,4 +149,9 @@ export function useStore() {
 export function useKeyword(id: string | undefined): Keyword | undefined {
   const { keywords } = useStore()
   return id ? keywords.find(k => k.id === id) : undefined
+}
+
+export function useArticles(kwId: string | undefined): GeneratedArticle[] {
+  const { articles } = useStore()
+  return kwId ? articles[kwId] ?? [] : []
 }

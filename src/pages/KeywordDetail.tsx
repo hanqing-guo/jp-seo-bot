@@ -1,10 +1,20 @@
 // 画面 3 — キーワード詳細
 
+import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, CircleDot, Clock, Trash2 } from 'lucide-react'
-import { useKeyword, useStore } from '../store/StoreProvider'
+import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react'
+import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
 import { TIER_PROFILES, budgetBreakdown } from '../lib/difficulty'
-import type { Keyword, MonthlyTask } from '../store/types'
+import { generateArticles } from '../lib/aiArticle'
+import type { GeneratedArticle, Keyword, MonthlyTask } from '../store/types'
+
+const ARTICLE_COUNT_BY_TIER: Record<Keyword['tier'], number> = { easy: 2, medium: 4, hard: 8 }
+
+const PROVIDER_BADGE: Record<string, { label: string; cls: string }> = {
+  deepseek: { label: 'DeepSeek 生成', cls: 'bg-brand-100 text-brand-700' },
+  claude: { label: 'Claude 生成', cls: 'bg-violet-100 text-violet-700' },
+  template: { label: 'プレビュー(API 未接続)', cls: 'bg-slate-100 text-slate-500' },
+}
 
 export default function KeywordDetail() {
   const { id } = useParams<{ id: string }>()
@@ -55,6 +65,7 @@ export default function KeywordDetail() {
 
       <ProgressCard kw={kw} progress={progress} profile={profile} />
       <TasksCard kw={kw} onUpdateStatus={updateTaskStatus} />
+      <ArticlesCard kw={kw} />
       <BudgetCard breakdown={breakdown} monthlyTotal={kw.monthlyBudgetYen} totalMonths={kw.targetMonths} />
     </div>
   )
@@ -244,5 +255,125 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
         </div>
       </div>
     </section>
+  )
+}
+
+function ArticlesCard({ kw }: { kw: Keyword }) {
+  const articles = useArticles(kw.id)
+  const { addArticles, deleteArticle } = useStore()
+  const profile = TIER_PROFILES[kw.tier]
+  const count = ARTICLE_COUNT_BY_TIER[kw.tier]
+  const [loading, setLoading] = useState(false)
+
+  async function handleGenerate() {
+    setLoading(true)
+    try {
+      const drafts = await generateArticles({ keyword: kw.keyword, tier: kw.tier, count })
+      addArticles(kw.id, drafts)
+    } catch (e) {
+      console.error(e)
+      alert('記事生成に失敗しました。もう一度お試しください。')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">AI 記事ドラフト</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            今月の目標: {count} 本({profile.emoji} {profile.label})
+          </p>
+        </div>
+        <button
+          onClick={handleGenerate}
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              生成中…({count} 本)
+            </>
+          ) : (
+            <>
+              <Sparkles className="size-4" />
+              今月の AI 記事を生成({count} 本)
+            </>
+          )}
+        </button>
+      </div>
+
+      {articles.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center">
+          <FileText className="mx-auto mb-2 size-8 text-slate-300" />
+          <p className="text-sm text-slate-500">まだ記事がありません。</p>
+          <p className="mt-1 text-xs text-slate-400">
+            「今月の AI 記事を生成」を押すと、{kw.keyword} 向けの日本語 SEO 記事の下書きが作成されます。
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {articles.map(a => (
+            <ArticleRow key={a.id} article={a} onDelete={() => deleteArticle(kw.id, a.id)} />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function ArticleRow({ article, onDelete }: { article: GeneratedArticle; onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const badge = PROVIDER_BADGE[article.provider] ?? PROVIDER_BADGE.template
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(article.markdown)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard 不可
+    }
+  }
+
+  return (
+    <li className="rounded-xl border border-slate-100">
+      <div className="flex items-center gap-2 p-3">
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          {open ? <ChevronUp className="size-4 shrink-0 text-slate-400" /> : <ChevronDown className="size-4 shrink-0 text-slate-400" />}
+          <span className="truncate text-sm font-medium text-slate-900">{article.title}</span>
+        </button>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${badge.cls}`}>{badge.label}</span>
+        <button
+          type="button"
+          onClick={copy}
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+        >
+          <Copy className="size-3.5" />
+          {copied ? 'コピー済' : 'コピー'}
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="inline-flex shrink-0 items-center rounded-md px-1.5 py-1 text-rose-500 hover:bg-rose-50"
+          aria-label="削除"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+      {open ? (
+        <pre className="max-h-96 overflow-y-auto border-t border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed whitespace-pre-wrap text-slate-700">
+          {article.markdown}
+        </pre>
+      ) : null}
+    </li>
   )
 }

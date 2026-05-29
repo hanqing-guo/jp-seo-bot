@@ -43,3 +43,12 @@ export interface Keyword {
   /** 追加日 ISO */
   createdAt: string
 }
+
+export interface GeneratedArticle {
+  id: string
+  title: string
+  markdown: string
+  /** 'deepseek' | 'claude' | 'template' */
+  provider: string
+  createdAt: string
+}
