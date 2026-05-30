@@ -1,10 +1,10 @@
 // 画面 1 — キーワード入力 + プラン提案(簡単 / ふつう / むずかしい)
 
 import { useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Sparkles, X } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
-import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES } from '../lib/difficulty'
+import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax } from '../lib/difficulty'
 import type { DifficultyTier } from '../store/types'
 
 const TIER_ORDER: DifficultyTier[] = ['easy', 'medium', 'hard']
@@ -45,24 +45,41 @@ export default function KeywordInput() {
           <label htmlFor="kw-input" className="text-sm font-semibold text-slate-700">
             キーワード
           </label>
-          <input
-            id="kw-input"
-            type="text"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="例:渋谷 カフェ 電源 おすすめ"
-            autoFocus
-            autoComplete="off"
-            spellCheck={false}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-lg placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
-          />
+          <div className="relative mt-2">
+            <input
+              id="kw-input"
+              type="text"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="例:渋谷 カフェ 電源 おすすめ"
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            />
+            {text ? (
+              <button
+                type="button"
+                onClick={() => setText('')}
+                aria-label="入力をクリア"
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {myTier && myProfile ? (
           <>
             <div>
-              <div className="text-sm font-semibold text-slate-700 mb-3">
-                あなたのキーワードに最適なプラン
+              <div className="mb-3">
+                <div className="text-sm font-semibold text-slate-700">
+                  あなたのキーワードに最適なプラン
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  ※ 難易度はキーワードから自動推定した目安です(実際の競合状況により前後します)
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {TIER_ORDER.map(tier => {
@@ -91,8 +108,8 @@ export default function KeywordInput() {
                         <span className="text-2xl font-bold text-slate-900">{p.targetMonths}</span> ヶ月で1ページ目
                       </div>
                       <div className="mt-1 text-sm font-semibold text-slate-900 tabular-nums">
-                        ¥{p.monthlyBudgetYen.toLocaleString()}
-                        <span className="text-xs font-normal text-slate-500"> / 月</span>
+                        ¥{withTax(p.monthlyBudgetYen).toLocaleString()}
+                        <span className="text-xs font-normal text-slate-500"> / 月(税込)</span>
                       </div>
                     </div>
                   )
@@ -118,9 +135,9 @@ export default function KeywordInput() {
               <h3 className="text-sm font-bold text-slate-900">料金の内訳</h3>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-slate-900 tabular-nums">
-                  ¥{myProfile.monthlyBudgetYen.toLocaleString()}
+                  ¥{withTax(myProfile.monthlyBudgetYen).toLocaleString()}
                 </span>
-                <span className="text-sm text-slate-500">/ 月(税別)</span>
+                <span className="text-sm text-slate-500">/ 月(税込)</span>
               </div>
               <ul className="mt-3 space-y-1.5 text-sm">
                 {breakdown.map(b => (
@@ -129,9 +146,17 @@ export default function KeywordInput() {
                     <span className="tabular-nums text-slate-900 font-semibold">¥{b.yen.toLocaleString()}</span>
                   </li>
                 ))}
+                <li className="flex justify-between pt-1 text-xs text-slate-500">
+                  <span>消費税(10%)</span>
+                  <span className="tabular-nums">¥{(withTax(myProfile.monthlyBudgetYen) - myProfile.monthlyBudgetYen).toLocaleString()}</span>
+                </li>
+                <li className="flex justify-between pt-1 font-bold text-slate-900">
+                  <span>合計(税込)</span>
+                  <span className="tabular-nums">¥{withTax(myProfile.monthlyBudgetYen).toLocaleString()} / 月</span>
+                </li>
               </ul>
               <p className="mt-3 text-xs text-slate-500">
-                {myProfile.targetMonths} ヶ月続けた場合の総額: ¥{(myProfile.monthlyBudgetYen * myProfile.targetMonths).toLocaleString()}(月 1 回払い・いつでも解約可)
+                {myProfile.targetMonths} ヶ月続けた場合の総額: ¥{(withTax(myProfile.monthlyBudgetYen) * myProfile.targetMonths).toLocaleString()}(税込・月 1 回払い・いつでも解約可)
               </p>
             </div>
           </>

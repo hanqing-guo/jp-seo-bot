@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react'
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
-import { TIER_PROFILES, budgetBreakdown, serviceFeatures } from '../lib/difficulty'
+import { TIER_PROFILES, budgetBreakdown, serviceFeatures, withTax } from '../lib/difficulty'
 import { generateArticles } from '../lib/aiArticle'
 import type { GeneratedArticle, Keyword, MonthlyTask } from '../store/types'
 
@@ -232,16 +232,17 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
   monthlyTotal: number
   totalMonths: number
 }) {
-  const totalCost = monthlyTotal * totalMonths
+  const monthlyTaxIncl = withTax(monthlyTotal)
+  const totalCost = monthlyTaxIncl * totalMonths
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
       <h2 className="text-sm font-bold text-slate-900 mb-4">費用の内訳</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <div className="text-xs text-slate-500">月額予算</div>
+          <div className="text-xs text-slate-500">月額予算(税込)</div>
           <div className="mt-1 text-3xl font-bold text-slate-900 tabular-nums">
-            ¥{monthlyTotal.toLocaleString()}
+            ¥{monthlyTaxIncl.toLocaleString()}
           </div>
           <ul className="mt-3 space-y-1.5 text-sm">
             {breakdown.map(b => (
@@ -250,16 +251,24 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
                 <span className="tabular-nums text-slate-900 font-semibold">¥{b.yen.toLocaleString()}</span>
               </li>
             ))}
+            <li className="flex justify-between pt-1 text-xs text-slate-500">
+              <span>消費税(10%)</span>
+              <span className="tabular-nums">¥{(monthlyTaxIncl - monthlyTotal).toLocaleString()}</span>
+            </li>
+            <li className="flex justify-between pt-1 font-bold text-slate-900">
+              <span>合計(税込)</span>
+              <span className="tabular-nums">¥{monthlyTaxIncl.toLocaleString()} / 月</span>
+            </li>
           </ul>
         </div>
 
         <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
-          <div className="text-xs text-slate-500">1 ページ目到達までの総額</div>
+          <div className="text-xs text-slate-500">1 ページ目到達までの総額(税込)</div>
           <div className="mt-1 text-3xl font-bold text-slate-900 tabular-nums">
             ¥{totalCost.toLocaleString()}
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            ¥{monthlyTotal.toLocaleString()}/月 × {totalMonths} ヶ月
+            ¥{monthlyTaxIncl.toLocaleString()}/月 × {totalMonths} ヶ月
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs text-slate-500 leading-relaxed">

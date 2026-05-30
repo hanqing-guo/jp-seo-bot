@@ -62,6 +62,12 @@ export const TIER_PROFILES: Record<DifficultyTier, TierProfile> = {
   },
 }
 
+// 消費税(日本は総額表示義務)。価格は税別を基準に保持し、表示は税込を主にする。
+export const TAX_RATE = 0.1
+export function withTax(yenExclusive: number): number {
+  return Math.round(yenExclusive * (1 + TAX_RATE))
+}
+
 export function tierFromKD(kd: number): DifficultyTier {
   if (kd <= 30) return 'easy'
   if (kd <= 60) return 'medium'
@@ -73,38 +79,63 @@ export function profileFromKD(kd: number): TierProfile {
 }
 
 /**
- * キーワード文字列から KD 0-100 を heuristic で推定。
+ * キーワード文字列から SEO 難易度 KD(0-100)を推定する heuristic。
+ *
+ * ⚠️ これは SERP を実測した値ではなく語彙ベースの推定。正確な競合度には
+ *    順位/難易度 API(DataForSEO 等)が必要。ただし「弁護士 無料 相談」等の
+ *    高単価・YMYL・激戦ワードを安易プランに誤判定しないことを最優先に設計。
+ *
+ * 主要シグナル:
+ *   ① 高競合/YMYL/お金が動く業種(弁護士・保険・不動産・転職・クレカ…)→ 大きく難化
+ *   ② 商業修飾(おすすめ・比較・無料・料金…)→ 難化
+ *   ③ 広いヘッド語(1〜2語/短語)→ 難化 / 具体的ロングテール・ハウツー → 易化
+ *   ④ 超ローカル(小エリア×ニッチ)→ 易化(大都市名は割引しない)
  */
 export function estimateKD(rawKeyword: string): number {
   const keyword = rawKeyword.trim()
   if (!keyword) return 50
-
+  const lower = keyword.toLowerCase()
   const tokens = keyword.split(/[\s　]+/).filter(Boolean)
   const wordCount = tokens.length
   const charCount = keyword.replace(/\s/g, '').length
 
-  let kd = 55
+  let kd = 42
 
-  if (wordCount >= 5) kd -= 30
-  else if (wordCount >= 4) kd -= 20
-  else if (wordCount >= 3) kd -= 12
-  else if (wordCount >= 2) kd -= 5
+  // ① 高競合・YMYL・高単価の業種(SEO 最激戦区)。最重要シグナル。
+  const fierce = [
+    '弁護士', '税理士', '司法書士', '行政書士', '社労士', '探偵', '興信所',
+    '医師', '医院', '歯医者', '歯科', 'クリニック', '美容外科', '整形', '脱毛', 'aga', '薄毛', 'インプラント', '矯正', '病院',
+    '転職', '求人', '派遣', 'アルバイト', '就職', 'エージェント',
+    '不動産', '賃貸', 'マンション', '戸建', '土地', '売却', '査定', '買取', 'リフォーム', '外壁塗装', '注文住宅', 'ハウスメーカー',
+    '保険', '生命保険', '自動車保険', '医療保険', 'クレジットカード', 'クレカ', 'カードローン', 'キャッシング', '借金', '債務整理', '過払い', 'ローン', '住宅ローン',
+    'fx', '投資', '株', '仮想通貨', 'nisa', 'ideco', '資産運用',
+    '副業', '在宅ワーク', '結婚相談', '婚活', 'マッチングアプリ',
+    '引っ越し', '引越', '葬儀', '葬式', '永代供養', '格安sim', '光回線', 'wifi', 'ウォーターサーバー', '電力', '動画配信', 'エステ',
+  ]
+  const fierceHits = fierce.filter((w) => lower.includes(w)).length
+  if (fierceHits > 0) kd += 32 + Math.min(12, (fierceHits - 1) * 8)
 
-  if (charCount <= 3) kd += 30
-  else if (charCount <= 5) kd += 15
-  else if (charCount >= 18) kd -= 8
+  // ② 競合を強める商業修飾(比較・お金系)。
+  const commercial = ['おすすめ', '比較', 'ランキング', '口コミ', '評判', '人気', '無料', '相談', '料金', '費用', '相場', '安い', '最安', '格安', '見積', '申込', '予約', '解約', '選び方']
+  const commHits = commercial.filter((w) => keyword.includes(w)).length
+  kd += Math.min(20, commHits * 6)
 
-  const generic = ['SEO', 'マーケティング', '対策', 'ツール', '比較', 'おすすめ', 'ランキング', 'とは', '方法', 'やり方']
-  for (const g of generic) {
-    if (keyword.includes(g)) kd += 8
-  }
+  // ③ ヘッド(広い)/ロングテール(具体)。
+  if (wordCount <= 1) kd += 16
+  else if (wordCount === 2) kd += 7
+  else if (wordCount === 4) kd -= 6
+  else if (wordCount >= 5) kd -= 13
+  if (charCount <= 4) kd += 10
+  else if (charCount >= 20) kd -= 6
 
-  const longtail = [/[一-龯]{2,}市/, /[一-龯]{1,}区/, /[一-龯]{1,}駅/, /\d{4}年/, /\d{1,2}\s*月/, /近く/, /徒歩/, /選び方/, /失敗/, /体験談/]
-  for (const re of longtail) {
-    if (re.test(keyword)) kd -= 10
-  }
+  // ④ 情報・ハウツー系ロングテール → 易化。
+  if (/(とは|やり方|方法|手順|始め方|作り方|初心者|入門|自分で|失敗|違い|意味|理由)/.test(keyword)) kd -= 9
 
-  if (/(料金|価格|無料|安い|サブスク|プラン)/.test(keyword)) kd += 5
+  // ⑤ 超ローカル(小エリア×ニッチ)→ 易化。大都市名は競合が多く割引しない。
+  const bigCity = /(東京|大阪|名古屋|横浜|福岡|札幌|京都|神戸|仙台|さいたま|千葉)/.test(keyword)
+  const microLocal = /([一-龯ぁ-ん]{2,}市|[一-龯]{1,3}区|[一-龯]{2,}町|[一-龯ァ-ヶ]{2,}駅|近く|周辺|徒歩|地域)/.test(keyword)
+  if (microLocal && !bigCity) kd -= 13
+  else if (microLocal && bigCity) kd -= 3
 
   return Math.max(0, Math.min(100, Math.round(kd)))
 }
