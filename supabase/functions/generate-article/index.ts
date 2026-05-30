@@ -9,6 +9,8 @@
 // 入力: { keyword: string, tier: 'easy'|'medium'|'hard', count: number }
 // 出力: { articles: [{ title, markdown, provider }] }
 
+import { buildSeoPrompt } from '../../../api/_lib/seoGen.ts'
+
 declare const Deno: { env: { get: (k: string) => string | undefined } }
 
 const corsHeaders: Record<string, string> = {
@@ -89,24 +91,8 @@ async function handler(req: Request): Promise<Response> {
 }
 
 function buildPrompt(keyword: string, angle: string): string {
-  return `あなたは日本市場専門の SEO ライターです。
-以下のキーワードで、Google Japan / Yahoo Japan の検索 1 ページ目を狙える
-日本語 SEO 記事の下書きを Markdown で書いてください。
-
-【キーワード】${keyword}
-【記事の切り口】${keyword}${angle}
-
-要件:
-- 2,000〜3,000 文字程度
-- H1 を 1 つ、H2 を 3〜5 つ、必要に応じて H3
-- 冒頭に導入文、末尾にまとめ
-- FAQ セクション(よくある質問 3 つ)を含める
-- E-E-A-T を意識し、具体例・数字を入れる
-- 薬機法・景品表示法に触れる誇大表現は避ける
-- 自然にキーワードと共起語を含める(キーワード詰め込みは禁止)
-
-JSON のみを返してください(コードフェンス不要):
-{"title": "記事タイトル(32 文字以内)", "markdown": "Markdown 本文"}`
+  // 満分 SEO エンジン(seoGen)に委譲。検索意図 + E-E-A-T + FAQ + 編集ゲート枠を強制。
+  return buildSeoPrompt(keyword, angle)
 }
 
 async function genWithDeepSeek(keyword: string, angle: string, key: string): Promise<DraftArticle> {
