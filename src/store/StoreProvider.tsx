@@ -107,13 +107,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // append だと同じ angle のタイトルがクリックの度に重複して積み上がるため。
   const replaceArticles = useCallback<StoreCtx['replaceArticles']>((kwId, drafts) => {
     setState(prev => {
-      const next: GeneratedArticle[] = drafts.map(d => ({
-        id: 'art-' + Math.random().toString(36).slice(2, 10),
-        title: d.title,
-        markdown: d.markdown,
-        provider: d.provider,
-        createdAt: new Date().toISOString(),
-      }))
+      // 同一バッチ内のタイトル重複を除去(防重複)。差し替え式なのでクリック毎の積み上げも無い。
+      const seen = new Set<string>()
+      const next: GeneratedArticle[] = drafts
+        .filter(d => (seen.has(d.title) ? false : (seen.add(d.title), true)))
+        .map(d => ({
+          id: 'art-' + Math.random().toString(36).slice(2, 10),
+          title: d.title,
+          markdown: d.markdown,
+          provider: d.provider,
+          createdAt: new Date().toISOString(),
+        }))
       return { ...prev, articles: { ...prev.articles, [kwId]: next } }
     })
   }, [])

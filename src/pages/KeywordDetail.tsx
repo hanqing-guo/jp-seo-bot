@@ -1,6 +1,6 @@
 // 画面 3 — キーワード詳細
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react'
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
@@ -278,6 +278,18 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
   const profile = TIER_PROFILES[kw.tier]
   const count = ARTICLE_COUNT_BY_TIER[kw.tier]
   const [loading, setLoading] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+
+  // 生成中の経過秒カウンタ。「固まった?」という誤解を防ぎ、進行中だと一目で伝える。
+  useEffect(() => {
+    if (!loading) {
+      setElapsed(0)
+      return
+    }
+    const start = Date.now()
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000)
+    return () => clearInterval(timer)
+  }, [loading])
 
   async function handleGenerate() {
     setLoading(true)
@@ -320,7 +332,17 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
         </button>
       </div>
 
-      {articles.length === 0 ? (
+      {loading ? (
+        <div className="rounded-xl border border-brand-200 bg-brand-50/50 py-10 text-center">
+          <Loader2 className="mx-auto mb-3 size-8 animate-spin text-brand-600" />
+          <p className="text-sm font-semibold text-slate-800">
+            AI が「{kw.keyword}」向けの記事を {count} 本 生成しています…
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            通常 20〜40 秒ほどかかります(経過 {elapsed} 秒)。このページを閉じずにお待ちください。
+          </p>
+        </div>
+      ) : articles.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center">
           <FileText className="mx-auto mb-2 size-8 text-slate-300" />
           <p className="text-sm text-slate-500">まだ記事がありません。</p>

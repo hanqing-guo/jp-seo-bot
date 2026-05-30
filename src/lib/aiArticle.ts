@@ -39,7 +39,9 @@ export async function generateArticles(opts: GenerateOptions): Promise<DraftArti
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(opts),
-        signal: AbortSignal.timeout(60000),
+        // DeepSeek は 1 本あたり数十秒かかることがある。短すぎる timeout だと
+        // 成功するはずの本物 AI 生成を打ち切って template に落ちてしまうため余裕を持たせる。
+        signal: AbortSignal.timeout(75000),
       })
       if (res.ok) {
         const data = (await res.json()) as { articles?: DraftArticle[] }
