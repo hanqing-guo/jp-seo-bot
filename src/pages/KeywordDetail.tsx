@@ -35,14 +35,14 @@ export default function KeywordDetail() {
 
   return (
     <div className="mx-auto max-w-4xl py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <Link to="/" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
-          <ArrowLeft className="size-4" />
-          キーワード一覧に戻る
+      <div className="flex items-center justify-between gap-2">
+        <Link to="/" className="inline-flex min-w-0 items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+          <ArrowLeft className="size-4 shrink-0" />
+          <span className="truncate">キーワード一覧に戻る</span>
         </Link>
         <button
           onClick={handleDelete}
-          className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700"
+          className="inline-flex shrink-0 items-center gap-1 text-xs text-rose-600 hover:text-rose-700"
         >
           <Trash2 className="size-3.5" />
           削除
@@ -164,9 +164,11 @@ function Spark({ history, color }: { history: (number | null)[]; color: string }
     })
     .join(' ')
 
+  // レスポンシブ: 固定 200px だと狭い画面で横はみ出し → 削除ボタンが見切れる原因。
+  // viewBox + width:100% でセル幅に追従させる(線幅は non-scaling-stroke で一定)。
   return (
-    <svg width={w} height={h} className="mt-2 block">
-      <path d={path} fill="none" stroke={color} strokeWidth={1.5} />
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="mt-2 block w-full">
+      <path d={path} fill="none" stroke={color} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }
@@ -272,7 +274,7 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
 
 function ArticlesCard({ kw }: { kw: Keyword }) {
   const articles = useArticles(kw.id)
-  const { addArticles, deleteArticle } = useStore()
+  const { replaceArticles, deleteArticle } = useStore()
   const profile = TIER_PROFILES[kw.tier]
   const count = ARTICLE_COUNT_BY_TIER[kw.tier]
   const [loading, setLoading] = useState(false)
@@ -281,7 +283,7 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
     setLoading(true)
     try {
       const drafts = await generateArticles({ keyword: kw.keyword, tier: kw.tier, count })
-      addArticles(kw.id, drafts)
+      replaceArticles(kw.id, drafts)
     } catch (e) {
       console.error(e)
       alert('記事生成に失敗しました。もう一度お試しください。')

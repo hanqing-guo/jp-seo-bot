@@ -31,7 +31,7 @@ interface StoreCtx extends AppState {
   addKeyword: (input: { keyword: string; difficulty: number }) => Keyword
   deleteKeyword: (id: string) => void
   updateTaskStatus: (kwId: string, monthNumber: number, status: 'planned' | 'in_progress' | 'done') => void
-  addArticles: (kwId: string, drafts: { title: string; markdown: string; provider: string }[]) => void
+  replaceArticles: (kwId: string, drafts: { title: string; markdown: string; provider: string }[]) => void
   deleteArticle: (kwId: string, articleId: string) => void
   reset: () => void
 }
@@ -103,17 +103,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const addArticles = useCallback<StoreCtx['addArticles']>((kwId, drafts) => {
+  // 「今月の AI 記事を生成」= 当該キーワードの下書きを丸ごと差し替え(append しない)。
+  // append だと同じ angle のタイトルがクリックの度に重複して積み上がるため。
+  const replaceArticles = useCallback<StoreCtx['replaceArticles']>((kwId, drafts) => {
     setState(prev => {
-      const existing = prev.articles[kwId] ?? []
-      const added: GeneratedArticle[] = drafts.map(d => ({
+      const next: GeneratedArticle[] = drafts.map(d => ({
         id: 'art-' + Math.random().toString(36).slice(2, 10),
         title: d.title,
         markdown: d.markdown,
         provider: d.provider,
         createdAt: new Date().toISOString(),
       }))
-      return { ...prev, articles: { ...prev.articles, [kwId]: [...added, ...existing] } }
+      return { ...prev, articles: { ...prev.articles, [kwId]: next } }
     })
   }, [])
 
@@ -133,8 +134,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<StoreCtx>(
-    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, addArticles, deleteArticle, reset }),
-    [state, addKeyword, deleteKeyword, updateTaskStatus, addArticles, deleteArticle, reset],
+    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, replaceArticles, deleteArticle, reset }),
+    [state, addKeyword, deleteKeyword, updateTaskStatus, replaceArticles, deleteArticle, reset],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
