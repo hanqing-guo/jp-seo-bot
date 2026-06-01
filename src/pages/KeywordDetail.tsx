@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react'
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
 import { TIER_PROFILES, budgetBreakdown, serviceFeatures, withTax, formatYen } from '../lib/difficulty'
 import { generateArticles } from '../lib/aiArticle'
@@ -89,6 +89,29 @@ function ProgressCard({ kw, profile, progress }: {
   profile: (typeof TIER_PROFILES)['easy']
   progress: number
 }) {
+  const { refreshGoogleRank } = useStore()
+  const [rankLoading, setRankLoading] = useState(false)
+  const [rankNote, setRankNote] = useState<string | null>(null)
+
+  async function handleRefreshRank() {
+    setRankLoading(true)
+    setRankNote(null)
+    try {
+      const r = await refreshGoogleRank(kw.id, kw.keyword)
+      if (!r.configured) {
+        setRankNote('GSC 未接続 — Vercel に GSC_SA_KEY_B64 / GSC_SITE_URL を設定すると Google 順位を自動取得します。')
+      } else if (r.position === null) {
+        setRankNote('GSC 接続済み。ただしこのキーワードはまだ表示データがありません(掲載されると順位が反映されます)。')
+      } else {
+        setRankNote(`Google 順位を更新しました(${r.position} 位)。`)
+      }
+    } catch (e) {
+      setRankNote(e instanceof Error ? e.message : String(e))
+    } finally {
+      setRankLoading(false)
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
       <h2 className="text-sm font-bold text-slate-900 mb-4">目標達成までの進捗</h2>
@@ -119,6 +142,21 @@ function ProgressCard({ kw, profile, progress }: {
         <div className="grid grid-cols-2 gap-3">
           <RankPanel label="Google Japan" rank={kw.googleRank} history={kw.rankHistory.map(s => s.google)} />
           <RankPanel label="Yahoo Japan"  rank={kw.yahooRank}  history={kw.rankHistory.map(s => s.yahoo)} />
+        </div>
+
+        {/* GSC(Google Search Console)から Google の平均掲載順位を取得して反映。
+            未接続(env 無し)なら下のノートで案内する。Yahoo は GSC では取れない。 */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <button
+            type="button"
+            onClick={handleRefreshRank}
+            disabled={rankLoading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
+          >
+            {rankLoading ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+            {rankLoading ? '取得中…' : 'GSC で Google 順位を取得'}
+          </button>
+          {rankNote ? <span className="text-[11px] leading-snug text-slate-500">{rankNote}</span> : null}
         </div>
       </div>
     </section>

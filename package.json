@@ -9,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
-    "api:local": "deno run --allow-net --allow-env --env-file=supabase/.env supabase/functions/generate-article/index.ts"
+    "api:local": "deno run --allow-net --allow-env --env-file=supabase/.env supabase/functions/server.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

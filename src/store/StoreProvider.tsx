@@ -13,6 +13,7 @@ import {
 import type { GeneratedArticle, Keyword } from './types'
 import { SEED_KEYWORDS } from '../lib/seedData'
 import { generateMonthlyTasks, profileFromKD, tierFromKD } from '../lib/difficulty'
+import { fetchGoogleRank, type GscRankResult } from '../lib/gscRank'
 
 interface AppState {
   keywords: Keyword[]
@@ -33,6 +34,8 @@ interface StoreCtx extends AppState {
   updateTaskStatus: (kwId: string, monthNumber: number, status: 'planned' | 'in_progress' | 'done') => void
   replaceArticles: (kwId: string, drafts: Omit<GeneratedArticle, 'id' | 'createdAt'>[]) => void
   deleteArticle: (kwId: string, articleId: string) => void
+  /** GSC から当該キーワードの Google 平均掲載順位を取得し、googleRank / rankHistory を更新。 */
+  refreshGoogleRank: (kwId: string, keyword: string) => Promise<GscRankResult>
   reset: () => void
 }
 
@@ -135,14 +138,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  // GSC 順位の取得。後端(/api/gsc-rank)が GSC 未接続(env 無し)なら configured:false
+  // が返り、この場合は store を変更しない(UI 側で「未接続」を表示)。接続済みなら
+  // googleRank を更新し、当日分の rankHistory スナップショットを upsert する。
+  const refreshGoogleRank = useCallback<StoreCtx['refreshGoogleRank']>(async (kwId, keyword) => {
+    const result = await fetchGoogleRank(keyword)
+    if (result.configured) {
+      const today = new Date().toISOString().slice(0, 10)
+      setState(prev => ({
+        ...prev,
+        keywords: prev.keywords.map(k => {
+          if (k.id !== kwId) return k
+          // 当日のスナップショットは upsert(同日重複を防ぐ)。履歴は直近 12 件に丸める。
+          const history = [
+            ...k.rankHistory.filter(s => s.date !== today),
+            { date: today, google: result.position, yahoo: k.yahooRank },
+          ].slice(-12)
+          return { ...k, googleRank: result.position, rankHistory: history }
+        }),
+      }))
+    }
+    return result
+  }, [])
+
   const reset = useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY)
     setState(initialState)
   }, [])
 
   const value = useMemo<StoreCtx>(
-    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, replaceArticles, deleteArticle, reset }),
-    [state, addKeyword, deleteKeyword, updateTaskStatus, replaceArticles, deleteArticle, reset],
+    () => ({ ...state, addKeyword, deleteKeyword, updateTaskStatus, replaceArticles, deleteArticle, refreshGoogleRank, reset }),
+    [state, addKeyword, deleteKeyword, updateTaskStatus, replaceArticles, deleteArticle, refreshGoogleRank, reset],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
