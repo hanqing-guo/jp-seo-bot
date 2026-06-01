@@ -11,7 +11,7 @@ const TIER_ORDER: DifficultyTier[] = ['easy', 'medium', 'hard']
 
 export default function KeywordInput() {
   const navigate = useNavigate()
-  const { addKeyword } = useStore()
+  const { addKeyword, keywords } = useStore()
   const [text, setText] = useState('')
 
   const trimmed = text.trim()
@@ -27,6 +27,15 @@ export default function KeywordInput() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!valid || kd === null) return
+    // 重複防止: 同じキーワード(空白正規化・大小無視)が既にあれば新規作成せず既存へ。
+    const norm = trimmed.replace(/\s+/g, ' ').toLowerCase()
+    const existing = keywords.find(
+      (k) => k.keyword.replace(/\s+/g, ' ').toLowerCase() === norm,
+    )
+    if (existing) {
+      navigate(`/kw/${existing.id}`)
+      return
+    }
     const kw = addKeyword({ keyword: trimmed, difficulty: kd })
     navigate(`/kw/${kw.id}`)
   }

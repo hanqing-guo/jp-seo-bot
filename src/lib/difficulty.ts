@@ -120,12 +120,23 @@ export function estimateKD(rawKeyword: string): number {
   const commHits = commercial.filter((w) => keyword.includes(w)).length
   kd += Math.min(20, commHits * 6)
 
-  // ★ 無意味・極端に短い入力(空白を除き 2 文字以下)で、かつ競合シグナル(①②)も
+  // ②' 広いヘッド語(YMYL ではないが検索数・競合が大きい一般トピック)。
+  //    単独だと上位化が難しいので加点する。短語ガード(下記)からも除外する。
+  const broadHead = [
+    '英語', '英会話', '料理', 'レシピ', 'ダイエット', '筋トレ', '旅行', 'ホテル',
+    '化粧品', 'コスメ', 'スキンケア', 'ファッション', '家電', 'パソコン', 'スマホ',
+    'ゲーム', 'アニメ', '映画', '音楽', '漫画', 'プログラミング', '資格',
+  ]
+  const broadHits = broadHead.filter((w) => keyword.includes(w)).length
+  if (broadHits > 0) kd += 12
+
+  // ★ 無意味・極端に短い入力(空白を除き 2 文字以下)で、かつ競合シグナル(①②②')も
   //   無い場合は、実在の競合キーワードとして判定できない。最低档(easy 相当)で返す。
-  //   「脱毛」「保険」等の意味ある短語は ① fierce で十分加点されるため誤判定にならない。
+  //   「脱毛」「保険」等の意味ある短語は ① fierce、「英語」等は ②' broadHead で
+  //   加点されるため誤判定にならない。
   //   ※ 以前は「短い=ヘッド語」とみなして加点し、単文字 "a" が最難・最高額の
   //     「むずかしい」档に誤判定されていた(発売阻断バグ)。その方向を是正する。
-  if (charCount <= 2 && fierceHits === 0 && commHits === 0) return 20
+  if (charCount <= 2 && fierceHits === 0 && commHits === 0 && broadHits === 0) return 20
 
   // ③ ヘッド(広い)/ロングテール(具体)。
   if (wordCount <= 1) kd += 16
