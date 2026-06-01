@@ -31,7 +31,7 @@ interface StoreCtx extends AppState {
   addKeyword: (input: { keyword: string; difficulty: number }) => Keyword
   deleteKeyword: (id: string) => void
   updateTaskStatus: (kwId: string, monthNumber: number, status: 'planned' | 'in_progress' | 'done') => void
-  replaceArticles: (kwId: string, drafts: { title: string; markdown: string; provider: string }[]) => void
+  replaceArticles: (kwId: string, drafts: Omit<GeneratedArticle, 'id' | 'createdAt'>[]) => void
   deleteArticle: (kwId: string, articleId: string) => void
   reset: () => void
 }
@@ -116,6 +116,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           title: d.title,
           markdown: d.markdown,
           provider: d.provider,
+          metaDescription: d.metaDescription,
+          faq: d.faq,
+          relatedKeywords: d.relatedKeywords,
           createdAt: new Date().toISOString(),
         }))
       return { ...prev, articles: { ...prev.articles, [kwId]: next } }

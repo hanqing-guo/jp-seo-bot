@@ -1,0 +1,25 @@
+# JP SEO Bot
+User-agent: *
+Allow: /
+
+# AI 検索クローラ — 引用を歓迎する(GEO)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# 公開可能な記事ページが用意できたら sitemap を追加する:
+# Sitemap: https://<your-domain>/sitemap.xml

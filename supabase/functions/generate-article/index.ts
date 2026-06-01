@@ -32,6 +32,9 @@ interface DraftArticle {
   title: string
   markdown: string
   provider: string
+  metaDescription?: string
+  faq?: { q: string; a: string }[]
+  relatedKeywords?: string[]
 }
 
 const ANGLES = [
@@ -134,11 +137,29 @@ async function genWithClaude(keyword: string, angle: string, key: string): Promi
   return { ...parsed, provider: 'claude' }
 }
 
-function parseArticle(text: string): { title: string; markdown: string } {
+function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
   const cleaned = text.replace(/```json\s*|\s*```/g, '').trim()
-  const obj = JSON.parse(cleaned) as { title?: string; markdown?: string }
+  const obj = JSON.parse(cleaned) as {
+    title?: string
+    markdown?: string
+    metaDescription?: string
+    faq?: { q?: string; a?: string }[]
+    relatedKeywords?: string[]
+  }
   if (!obj.markdown) throw new Error('missing markdown')
-  return { title: obj.title ?? '無題', markdown: obj.markdown }
+  const faq = Array.isArray(obj.faq)
+    ? obj.faq.filter((f) => f && f.q && f.a).map((f) => ({ q: f.q as string, a: f.a as string }))
+    : []
+  const relatedKeywords = Array.isArray(obj.relatedKeywords)
+    ? obj.relatedKeywords.filter((k): k is string => typeof k === 'string')
+    : []
+  return {
+    title: obj.title ?? '無題',
+    markdown: obj.markdown,
+    metaDescription: obj.metaDescription,
+    faq: faq.length > 0 ? faq : undefined,
+    relatedKeywords: relatedKeywords.length > 0 ? relatedKeywords : undefined,
+  }
 }
 
 function templateArticle(keyword: string, angle: string): DraftArticle {

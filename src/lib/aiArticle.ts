@@ -9,13 +9,19 @@
 // 後端を deploy して VITE_API_BASE を .env に入れれば、コード変更なしで
 // 本物の DeepSeek / Claude 生成に切り替わる。
 
-import type { DifficultyTier } from '../store/types'
+import type { DifficultyTier, Faq } from '../store/types'
 
 export interface DraftArticle {
   title: string
   markdown: string
   /** 'deepseek' | 'claude' | 'template' */
   provider: string
+  /** SEO メタディスクリプション(後端が生成時に返す)。 */
+  metaDescription?: string
+  /** よくある質問(FAQPage schema / 本文 FAQ 用)。 */
+  faq?: Faq[]
+  /** 共起語・関連キーワード(内部リンク候補)。 */
+  relatedKeywords?: string[]
 }
 
 export interface GenerateOptions {

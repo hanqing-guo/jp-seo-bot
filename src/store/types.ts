@@ -44,11 +44,22 @@ export interface Keyword {
   createdAt: string
 }
 
+export interface Faq {
+  q: string
+  a: string
+}
+
 export interface GeneratedArticle {
   id: string
   title: string
   markdown: string
   /** 'deepseek' | 'claude' | 'template' */
   provider: string
+  /** SEO メタディスクリプション(120 字程度)。生成時のみ。 */
+  metaDescription?: string
+  /** よくある質問。本文 FAQ + FAQPage JSON-LD に使う。 */
+  faq?: Faq[]
+  /** 共起語・関連キーワード(内部リンク候補)。 */
+  relatedKeywords?: string[]
   createdAt: string
 }

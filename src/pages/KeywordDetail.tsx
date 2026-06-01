@@ -6,6 +6,7 @@ import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileT
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
 import { TIER_PROFILES, budgetBreakdown, serviceFeatures, withTax, formatYen } from '../lib/difficulty'
 import { generateArticles } from '../lib/aiArticle'
+import { buildArticleJsonLd } from '../lib/jsonLd'
 import type { GeneratedArticle, Keyword, MonthlyTask } from '../store/types'
 
 const ARTICLE_COUNT_BY_TIER: Record<Keyword['tier'], number> = { easy: 2, medium: 4, hard: 8 }
@@ -388,13 +389,25 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
 function ArticleRow({ article, onDelete }: { article: GeneratedArticle; onDelete: () => void }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [copiedLd, setCopiedLd] = useState(false)
   const badge = PROVIDER_BADGE[article.provider] ?? PROVIDER_BADGE.template
+  const hasSchema = !!(article.metaDescription || (article.faq && article.faq.length > 0))
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(article.markdown)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard 不可
+    }
+  }
+
+  async function copyJsonLd() {
+    try {
+      await navigator.clipboard.writeText(buildArticleJsonLd(article))
+      setCopiedLd(true)
+      setTimeout(() => setCopiedLd(false), 1500)
     } catch {
       // clipboard 不可
     }
@@ -430,9 +443,51 @@ function ArticleRow({ article, onDelete }: { article: GeneratedArticle; onDelete
         </button>
       </div>
       {open ? (
-        <pre className="max-h-96 overflow-y-auto border-t border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed whitespace-pre-wrap text-slate-700">
-          {article.markdown}
-        </pre>
+        <div className="border-t border-slate-100 bg-slate-50 p-3 space-y-3">
+          {article.metaDescription ? (
+            <div className="text-xs">
+              <div className="font-bold text-slate-500 mb-0.5">メタディスクリプション</div>
+              <p className="text-slate-700 leading-relaxed">{article.metaDescription}</p>
+            </div>
+          ) : null}
+          <pre className="max-h-96 overflow-y-auto text-xs leading-relaxed whitespace-pre-wrap text-slate-700">
+            {article.markdown}
+          </pre>
+          {article.faq && article.faq.length > 0 ? (
+            <div className="text-xs">
+              <div className="font-bold text-slate-500 mb-1">FAQ</div>
+              <ul className="space-y-1.5">
+                {article.faq.map((f, i) => (
+                  <li key={i} className="leading-relaxed">
+                    <span className="font-semibold text-slate-700">Q. {f.q}</span>
+                    <br />
+                    <span className="text-slate-600">A. {f.a}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {article.relatedKeywords && article.relatedKeywords.length > 0 ? (
+            <div className="text-xs">
+              <div className="font-bold text-slate-500 mb-1">関連キーワード(内部リンク候補)</div>
+              <div className="flex flex-wrap gap-1.5">
+                {article.relatedKeywords.map((k, i) => (
+                  <span key={i} className="rounded-full bg-slate-200 px-2 py-0.5 text-slate-600">{k}</span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {hasSchema ? (
+            <button
+              type="button"
+              onClick={copyJsonLd}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+            >
+              <Copy className="size-3.5" />
+              {copiedLd ? 'JSON-LD コピー済' : 'JSON-LD(構造化データ)をコピー'}
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </li>
   )
