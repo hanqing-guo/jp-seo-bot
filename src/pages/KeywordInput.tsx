@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Sparkles, X } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
-import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax, isValidKeyword } from '../lib/difficulty'
+import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax, isValidKeyword, formatYen } from '../lib/difficulty'
 import type { DifficultyTier } from '../store/types'
 
 const TIER_ORDER: DifficultyTier[] = ['easy', 'medium', 'hard']
@@ -125,7 +125,7 @@ export default function KeywordInput() {
                         <span className="text-2xl font-bold text-slate-900">{p.targetMonths}</span> ヶ月で1ページ目
                       </div>
                       <div className="mt-1 text-sm font-semibold text-slate-900 tabular-nums">
-                        ¥{withTax(p.monthlyBudgetYen).toLocaleString()}
+                        {formatYen(withTax(p.monthlyBudgetYen))}
                         <span className="text-xs font-normal text-slate-500"> / 月(税込)</span>
                       </div>
                     </div>
@@ -152,7 +152,7 @@ export default function KeywordInput() {
               <h3 className="text-sm font-bold text-slate-900">料金の内訳</h3>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-slate-900 tabular-nums">
-                  ¥{withTax(myProfile.monthlyBudgetYen).toLocaleString()}
+                  {formatYen(withTax(myProfile.monthlyBudgetYen))}
                 </span>
                 <span className="text-sm text-slate-500">/ 月(税込)</span>
               </div>
@@ -160,24 +160,24 @@ export default function KeywordInput() {
                 {breakdown.map(b => (
                   <li key={b.label} className="flex justify-between border-b border-slate-100 pb-1.5">
                     <span className="text-slate-600">{b.label}<span className="text-[10px] text-slate-400 ml-1">(税抜)</span></span>
-                    <span className="tabular-nums text-slate-900 font-semibold">¥{b.yen.toLocaleString()}</span>
+                    <span className="tabular-nums text-slate-900 font-semibold">{formatYen(b.yen)}</span>
                   </li>
                 ))}
                 <li className="flex justify-between pt-1 text-slate-600">
                   <span>小計(税抜)</span>
-                  <span className="tabular-nums">¥{myProfile.monthlyBudgetYen.toLocaleString()}</span>
+                  <span className="tabular-nums">{formatYen(myProfile.monthlyBudgetYen)}</span>
                 </li>
                 <li className="flex justify-between pt-1 text-xs text-slate-500">
                   <span>消費税(10%)</span>
-                  <span className="tabular-nums">¥{(withTax(myProfile.monthlyBudgetYen) - myProfile.monthlyBudgetYen).toLocaleString()}</span>
+                  <span className="tabular-nums">{formatYen(withTax(myProfile.monthlyBudgetYen) - myProfile.monthlyBudgetYen)}</span>
                 </li>
                 <li className="flex justify-between pt-1 font-bold text-slate-900">
                   <span>合計(税込)</span>
-                  <span className="tabular-nums">¥{withTax(myProfile.monthlyBudgetYen).toLocaleString()} / 月</span>
+                  <span className="tabular-nums">{formatYen(withTax(myProfile.monthlyBudgetYen))} / 月</span>
                 </li>
               </ul>
               <p className="mt-3 text-xs text-slate-500">
-                {myProfile.targetMonths} ヶ月続けた場合の総額: ¥{(withTax(myProfile.monthlyBudgetYen) * myProfile.targetMonths).toLocaleString()}(税込・月 1 回払い・いつでも解約可)
+                {myProfile.targetMonths} ヶ月続けた場合の総額: {formatYen(withTax(myProfile.monthlyBudgetYen) * myProfile.targetMonths)}(税込・月 1 回払い・いつでも解約可)
               </p>
             </div>
           </>

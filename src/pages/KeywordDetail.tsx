@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react'
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
-import { TIER_PROFILES, budgetBreakdown, serviceFeatures, withTax } from '../lib/difficulty'
+import { TIER_PROFILES, budgetBreakdown, serviceFeatures, withTax, formatYen } from '../lib/difficulty'
 import { generateArticles } from '../lib/aiArticle'
 import type { GeneratedArticle, Keyword, MonthlyTask } from '../store/types'
 
@@ -228,7 +228,7 @@ function TaskRow({ task, onToggle }: { task: MonthlyTask; onToggle: (next: Month
         </p>
       </div>
       <span className="text-xs tabular-nums text-slate-400 shrink-0">
-        ¥{task.budgetYen.toLocaleString()}
+        {formatYen(task.budgetYen)}
       </span>
     </li>
   )
@@ -249,26 +249,26 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
         <div>
           <div className="text-xs text-slate-500">月額予算(税込)</div>
           <div className="mt-1 text-3xl font-bold text-slate-900 tabular-nums">
-            ¥{monthlyTaxIncl.toLocaleString()}
+            {formatYen(monthlyTaxIncl)}
           </div>
           <ul className="mt-3 space-y-1.5 text-sm">
             {breakdown.map(b => (
               <li key={b.label} className="flex justify-between border-b border-slate-100 pb-1.5">
                 <span className="text-slate-600">{b.label}<span className="text-[10px] text-slate-400 ml-1">(税抜)</span></span>
-                <span className="tabular-nums text-slate-900 font-semibold">¥{b.yen.toLocaleString()}</span>
+                <span className="tabular-nums text-slate-900 font-semibold">{formatYen(b.yen)}</span>
               </li>
             ))}
             <li className="flex justify-between pt-1 text-slate-600">
               <span>小計(税抜)</span>
-              <span className="tabular-nums">¥{monthlyTotal.toLocaleString()}</span>
+              <span className="tabular-nums">{formatYen(monthlyTotal)}</span>
             </li>
             <li className="flex justify-between pt-1 text-xs text-slate-500">
               <span>消費税(10%)</span>
-              <span className="tabular-nums">¥{(monthlyTaxIncl - monthlyTotal).toLocaleString()}</span>
+              <span className="tabular-nums">{formatYen(monthlyTaxIncl - monthlyTotal)}</span>
             </li>
             <li className="flex justify-between pt-1 font-bold text-slate-900">
               <span>合計(税込)</span>
-              <span className="tabular-nums">¥{monthlyTaxIncl.toLocaleString()} / 月</span>
+              <span className="tabular-nums">{formatYen(monthlyTaxIncl)} / 月</span>
             </li>
           </ul>
         </div>
@@ -276,10 +276,10 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
         <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
           <div className="text-xs text-slate-500">1 ページ目到達までの総額(税込)</div>
           <div className="mt-1 text-3xl font-bold text-slate-900 tabular-nums">
-            ¥{totalCost.toLocaleString()}
+            {formatYen(totalCost)}
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            ¥{monthlyTaxIncl.toLocaleString()}/月 × {totalMonths} ヶ月
+            {formatYen(monthlyTaxIncl)}/月 × {totalMonths} ヶ月
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs text-slate-500 leading-relaxed">

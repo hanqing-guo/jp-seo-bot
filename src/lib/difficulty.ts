@@ -68,6 +68,15 @@ export function withTax(yenExclusive: number): number {
   return Math.round(yenExclusive * (1 + TAX_RATE))
 }
 
+/**
+ * 円の統一表示。locale を ja-JP に固定して桁区切りを保証する
+ * (ブラウザ locale 依存の `toLocaleString()` だと、例: de 環境で "¥3.300" のように
+ *  区切りが崩れる)。日本市場向けプロダクトなので常に ja-JP で揃える。
+ */
+export function formatYen(yen: number): string {
+  return `¥${yen.toLocaleString('ja-JP')}`
+}
+
 export function tierFromKD(kd: number): DifficultyTier {
   if (kd <= 30) return 'easy'
   if (kd <= 60) return 'medium'
