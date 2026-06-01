@@ -97,21 +97,23 @@ function KeywordCard({ k }: { k: Keyword }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <RankBox label="Google Japan" rank={k.googleRank} color="#4285f4" />
-        <RankBox label="Yahoo Japan" rank={k.yahooRank} color="#ff0033" />
+        <RankBox label="Google Japan" rank={k.googleRank} />
+        <RankBox label="Yahoo Japan" rank={k.yahooRank} />
       </div>
     </Link>
   )
 }
 
-function RankBox({ label, rank, color }: { label: string; rank: number | null; color: string }) {
+function RankBox({ label, rank }: { label: string; rank: number | null }) {
+  // P2 fix: 順位の色は媒体(Google/Yahoo)で変えず意味で統一(1 ページ目=緑 / それ以外=スレート)。
+  const rankColor = rank !== null && rank <= 10 ? '#16a34a' : '#0f172a'
   return (
     <div className="rounded-lg border border-slate-100 px-3 py-2">
       <div className="flex items-center gap-1 text-[10px] text-slate-500">
         <Search className="size-2.5" />
         {label}
       </div>
-      <div className="mt-0.5 text-lg font-bold tabular-nums" style={{ color: rank !== null && rank <= 10 ? color : '#0f172a' }}>
+      <div className="mt-0.5 text-lg font-bold tabular-nums" style={{ color: rankColor }}>
         {rank === null ? '計測中' : `${rank} 位`}
       </div>
     </div>

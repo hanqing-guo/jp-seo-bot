@@ -12,6 +12,8 @@
 // 注: ローカル開発用の Deno 版は supabase/functions/generate-article/index.ts
 //     (ロジックは同一。クラウドは本ファイル、ローカルは Deno 版を使用)
 
+import { buildSeoPrompt } from './_lib/seoGen.ts'
+
 export const config = { runtime: 'edge' }
 
 declare const process: { env: Record<string, string | undefined> }
@@ -56,27 +58,24 @@ export default async function handler(req: Request): Promise<Response> {
   const deepseek = process.env.DEEPSEEK_API_KEY
   const anthropic = process.env.ANTHROPIC_API_KEY
 
+  // provider 選択: DeepSeek 優先 → Claude → どちらも無ければ template。
+  const genOne =
+    deepseek ? (angle: string) => genWithDeepSeek(keyword, angle, deepseek)
+    : anthropic ? (angle: string) => genWithClaude(keyword, angle, anthropic)
+    : null
+
   let articles: DraftArticle[]
-  try {
-    if (deepseek) {
-      articles = await Promise.all(
-        Array.from({ length: count }, (_, i) =>
-          genWithDeepSeek(keyword, ANGLES[i % ANGLES.length], deepseek),
-        ),
-      )
-    } else if (anthropic) {
-      articles = await Promise.all(
-        Array.from({ length: count }, (_, i) =>
-          genWithClaude(keyword, ANGLES[i % ANGLES.length], anthropic),
-        ),
-      )
-    } else {
-      articles = Array.from({ length: count }, (_, i) =>
-        templateArticle(keyword, ANGLES[i % ANGLES.length]),
-      )
-    }
-  } catch (e) {
-    console.error('generation error', e)
+  if (genOne) {
+    // allSettled: 1 本失敗しても成功分は活かし、失敗した本数だけ template で穴埋め(全滅させない)。
+    const results = await Promise.allSettled(
+      Array.from({ length: count }, (_, i) => genOne(ANGLES[i % ANGLES.length])),
+    )
+    articles = results.map((r, i) => {
+      if (r.status === 'fulfilled') return r.value
+      console.error('generation error', r.reason)
+      return templateArticle(keyword, ANGLES[i % ANGLES.length])
+    })
+  } else {
     articles = Array.from({ length: count }, (_, i) =>
       templateArticle(keyword, ANGLES[i % ANGLES.length]),
     )
@@ -86,24 +85,8 @@ export default async function handler(req: Request): Promise<Response> {
 }
 
 function buildPrompt(keyword: string, angle: string): string {
-  return `あなたは日本市場専門の SEO ライターです。
-以下のキーワードで、Google Japan / Yahoo Japan の検索 1 ページ目を狙える
-日本語 SEO 記事の下書きを Markdown で書いてください。
-
-【キーワード】${keyword}
-【記事の切り口】${keyword}${angle}
-
-要件:
-- 2,000〜3,000 文字程度
-- H1 を 1 つ、H2 を 3〜5 つ、必要に応じて H3
-- 冒頭に導入文、末尾にまとめ
-- FAQ セクション(よくある質問 3 つ)を含める
-- E-E-A-T を意識し、具体例・数字を入れる
-- 薬機法・景品表示法に触れる誇大表現は避ける
-- 自然にキーワードと共起語を含める(キーワード詰め込みは禁止)
-
-JSON のみを返してください(コードフェンス不要):
-{"title": "記事タイトル(32 文字以内)", "markdown": "Markdown 本文"}`
+  // 満分 SEO エンジン(seoGen)に委譲。Deno 版と同一プロンプトで本番・ローカルの品質を揃える。
+  return buildSeoPrompt(keyword, angle)
 }
 
 async function genWithDeepSeek(keyword: string, angle: string, key: string): Promise<DraftArticle> {

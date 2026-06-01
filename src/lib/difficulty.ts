@@ -120,13 +120,21 @@ export function estimateKD(rawKeyword: string): number {
   const commHits = commercial.filter((w) => keyword.includes(w)).length
   kd += Math.min(20, commHits * 6)
 
+  // ★ 無意味・極端に短い入力(空白を除き 2 文字以下)で、かつ競合シグナル(①②)も
+  //   無い場合は、実在の競合キーワードとして判定できない。最低档(easy 相当)で返す。
+  //   「脱毛」「保険」等の意味ある短語は ① fierce で十分加点されるため誤判定にならない。
+  //   ※ 以前は「短い=ヘッド語」とみなして加点し、単文字 "a" が最難・最高額の
+  //     「むずかしい」档に誤判定されていた(発売阻断バグ)。その方向を是正する。
+  if (charCount <= 2 && fierceHits === 0 && commHits === 0) return 20
+
   // ③ ヘッド(広い)/ロングテール(具体)。
   if (wordCount <= 1) kd += 16
   else if (wordCount === 2) kd += 7
   else if (wordCount === 4) kd -= 6
   else if (wordCount >= 5) kd -= 13
-  if (charCount <= 4) kd += 10
-  else if (charCount >= 20) kd -= 6
+  // 「短い=ヘッド語」の一律加点(旧 charCount<=4 → +10)は撤去。競合度は
+  // ① fierce / ② commercial で判定し、長いロングテールのみ易化する。
+  if (charCount >= 20) kd -= 6
 
   // ④ 情報・ハウツー系ロングテール → 易化。
   if (/(とは|やり方|方法|手順|始め方|作り方|初心者|入門|自分で|失敗|違い|意味|理由)/.test(keyword)) kd -= 9
@@ -138,6 +146,18 @@ export function estimateKD(rawKeyword: string): number {
   else if (microLocal && bigCity) kd -= 3
 
   return Math.max(0, Math.min(100, Math.round(kd)))
+}
+
+/**
+ * キーワードとして有効か。空白・単文字・記号のみ・乱码を弾く。
+ *   - 空白を除いて 2 文字以上
+ *   - 日本語(かな/カナ/漢字)または英数字を 1 文字以上含む
+ * 開通フロー(KeywordInput)はこれが false の間は送信不可にする。
+ */
+export function isValidKeyword(raw: string): boolean {
+  const k = (raw ?? '').trim()
+  if (k.replace(/\s/g, '').length < 2) return false
+  return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}A-Za-z0-9]/u.test(k)
 }
 
 export function generateMonthlyTasks(tier: DifficultyTier): MonthlyTask[] {
@@ -200,11 +220,13 @@ export function budgetBreakdown(tier: DifficultyTier): { label: string; yen: num
       { label: '順位チェックツール', yen: 1000 },
     ]
   }
+  // 順位チェックツールは全档で同一サービス = ¥1,000 に統一。
+  // 月額合計 ¥12,000 は据え置き、差額は AI 記事(最大の内訳)で吸収(6500→6000)。
   return [
-    { label: 'AI 記事の作成(8 本)', yen: 6500 },
+    { label: 'AI 記事の作成(8 本)', yen: 6000 },
     { label: 'プレスリリース配信(月 1 本)', yen: 3500 },
     { label: '紹介リンクの獲得', yen: 1500 },
-    { label: '順位チェックツール', yen: 500 },
+    { label: '順位チェックツール', yen: 1000 },
   ]
 }
 

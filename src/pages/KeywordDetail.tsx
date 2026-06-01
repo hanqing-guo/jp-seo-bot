@@ -88,16 +88,18 @@ function ProgressCard({ kw, profile, progress }: {
   profile: (typeof TIER_PROFILES)['easy']
   progress: number
 }) {
-  const startRank = kw.rankHistory[0]?.google ?? null
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
-      <h2 className="text-sm font-bold text-slate-900 mb-4">順位の進捗</h2>
+      <h2 className="text-sm font-bold text-slate-900 mb-4">目標達成までの進捗</h2>
 
       <div className="space-y-4">
         <div>
+          {/* P1 fix: バー幅・% ラベルともに「経過月数 / 目標月数」で統一(仪表盘と同口径)。
+              以前は左ラベルが「開始位→目標位」(順位枠)でバーは時間 = 口径が混在していた。
+              順位の推移は下の RankPanel(スパークライン)で別途表示する。 */}
           <div className="flex items-baseline justify-between text-xs mb-1">
             <span className="text-slate-500">
-              開始 {startRank !== null ? `${startRank} 位` : '—'} → 目標 1 位
+              目標 {profile.targetMonths} ヶ月で 1 ページ目
             </span>
             <span className="tabular-nums font-bold" style={{ color: profile.color }}>
               {kw.elapsedMonths} / {kw.targetMonths} ヶ月({progress}%)
@@ -114,28 +116,30 @@ function ProgressCard({ kw, profile, progress }: {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <RankPanel label="Google Japan" rank={kw.googleRank} color="#4285f4" history={kw.rankHistory.map(s => s.google)} />
-          <RankPanel label="Yahoo Japan"  rank={kw.yahooRank}  color="#ff0033" history={kw.rankHistory.map(s => s.yahoo)} />
+          <RankPanel label="Google Japan" rank={kw.googleRank} history={kw.rankHistory.map(s => s.google)} />
+          <RankPanel label="Yahoo Japan"  rank={kw.yahooRank}  history={kw.rankHistory.map(s => s.yahoo)} />
         </div>
       </div>
     </section>
   )
 }
 
-function RankPanel({ label, rank, color, history }: {
+function RankPanel({ label, rank, history }: {
   label: string
   rank: number | null
-  color: string
   history: (number | null)[]
 }) {
+  // P2 fix: 順位の色は媒体(Google/Yahoo)で変えず意味で統一する。
+  // 1 ページ目(10 位以内)= 緑 / それ以外 = スレート。スパークラインも中立色。
+  const rankColor = rank !== null && rank <= 10 ? '#16a34a' : '#0f172a'
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
       <div className="text-xs text-slate-500">{label}</div>
-      <div className="mt-1 text-3xl font-bold tabular-nums" style={{ color: rank !== null && rank <= 10 ? color : '#0f172a' }}>
+      <div className="mt-1 text-3xl font-bold tabular-nums" style={{ color: rankColor }}>
         {rank === null ? '計測中' : `${rank} 位`}
       </div>
       {history.length >= 2 ? (
-        <Spark history={history} color={color} />
+        <Spark history={history} color="#94a3b8" />
       ) : (
         <div className="mt-2 text-[10px] text-slate-400">履歴を蓄積中…</div>
       )}
@@ -159,7 +163,10 @@ function Spark({ history, color }: { history: (number | null)[]; color: string }
     .filter(p => p.y !== null)
     .map((p, idx) => {
       const x = (p.x / Math.max(1, maxX)) * w
-      const y = h - (((p.y as number) - minRank) / range) * (h - 4) - 2
+      // P1 fix: 順位は小さいほど上位。改善(数値↓)を視覚的に「上向き」に見せるため
+      // y 軸を反転 — 最良順位(minRank)を上、最悪(maxRank)を下に配置する。
+      // これで「線が上がる = 順位が良くなった」と直感的に読める。
+      const y = (((p.y as number) - minRank) / range) * (h - 4) + 2
       return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`
     })
     .join(' ')
@@ -247,10 +254,14 @@ function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
           <ul className="mt-3 space-y-1.5 text-sm">
             {breakdown.map(b => (
               <li key={b.label} className="flex justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-slate-600">{b.label}</span>
+                <span className="text-slate-600">{b.label}<span className="text-[10px] text-slate-400 ml-1">(税抜)</span></span>
                 <span className="tabular-nums text-slate-900 font-semibold">¥{b.yen.toLocaleString()}</span>
               </li>
             ))}
+            <li className="flex justify-between pt-1 text-slate-600">
+              <span>小計(税抜)</span>
+              <span className="tabular-nums">¥{monthlyTotal.toLocaleString()}</span>
+            </li>
             <li className="flex justify-between pt-1 text-xs text-slate-500">
               <span>消費税(10%)</span>
               <span className="tabular-nums">¥{(monthlyTaxIncl - monthlyTotal).toLocaleString()}</span>
@@ -307,7 +318,11 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
       replaceArticles(kw.id, drafts)
     } catch (e) {
       console.error(e)
-      alert('記事生成に失敗しました。もう一度お試しください。')
+      const msg = e instanceof Error ? e.message : String(e)
+      alert(
+        `記事生成に失敗しました。\n${msg}\n\n` +
+          '生成バックエンドが起動しているかご確認のうえ、もう一度お試しください。',
+      )
     } finally {
       setLoading(false)
     }

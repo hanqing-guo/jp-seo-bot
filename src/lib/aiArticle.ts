@@ -33,27 +33,29 @@ function apiBase(): string {
 
 export async function generateArticles(opts: GenerateOptions): Promise<DraftArticle[]> {
   const base = apiBase()
-  if (base) {
-    try {
-      const res = await fetch(`${base.replace(/\/$/, '')}/generate-article`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(opts),
-        // DeepSeek は 1 本あたり数十秒かかることがある。短すぎる timeout だと
-        // 成功するはずの本物 AI 生成を打ち切って template に落ちてしまうため余裕を持たせる。
-        signal: AbortSignal.timeout(75000),
-      })
-      if (res.ok) {
-        const data = (await res.json()) as { articles?: DraftArticle[] }
-        if (Array.isArray(data.articles) && data.articles.length > 0) {
-          return data.articles
-        }
-      }
-    } catch {
-      // ネットワーク / タイムアウト → fallback へ
-    }
+
+  // VITE_API_BASE 未設定 = API 未接続のデモモード。この時だけ template プレビューを
+  // 返す(キー無しでもデモが動く)。バッジは「プレビュー(API 未接続)」で明示される。
+  if (!base) return templateArticles(opts)
+
+  // API 設定済み = 本物の AI 生成を期待している状態。ここで失敗(バックエンド停止 /
+  // タイムアウト / 非200 / 空応答)したのに黙って低品質 template を下書きとして保存
+  // すると、利用者が「AI が生成した記事」と誤認する(= テンプレ草稿が混入)。
+  // 失敗は握りつぶさず throw し、呼び出し側(handleGenerate)に「生成失敗・再試行」を
+  // 出させる。既存の下書きも上書きされない。
+  const res = await fetch(`${base.replace(/\/$/, '')}/generate-article`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(opts),
+    // DeepSeek は 1 本あたり数十秒かかることがあるため余裕を持たせる。
+    signal: AbortSignal.timeout(75000),
+  })
+  if (!res.ok) throw new Error(`生成バックエンドがエラーを返しました (HTTP ${res.status})`)
+  const data = (await res.json()) as { articles?: DraftArticle[] }
+  if (!Array.isArray(data.articles) || data.articles.length === 0) {
+    throw new Error('生成結果が空でした(バックエンドの応答に articles がありません)')
   }
-  return templateArticles(opts)
+  return data.articles
 }
 
 // ────────────────────────────────────────────────────────────
@@ -154,7 +156,7 @@ ${keyword}について、${angle.focus}を中心に解説しました。
 
 /**
  * キーワードを空白・助詞で簡易分割して共起語候補を作る。
- * 形態素解析(kuromoji)はここでは使わず軽量に。
+ * 形態素解析ライブラリは使わず、軽量に処理する。
  */
 function coKeywords(keyword: string): string[] {
   const tokens = keyword

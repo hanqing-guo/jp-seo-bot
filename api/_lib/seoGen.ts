@@ -1,38 +1,6 @@
 // 満分 SEO 記事生成エンジン — api/ (Vercel) と supabase/functions (Deno) の共通コア
-// 「普通の AI 記事」を「検索1ページ目を狙える満分 SEO 記事」に引き上げる。
-//
-// 提供する純関数(Deno / Vercel 両方で動く・ランタイム非依存):
-//   buildSeoPrompt()    — 検索意図 + E-E-A-T + 構造化を強制する SEO prompt
-//   parseSeoResponse()  — AI の JSON 出力を SeoArticle 構造にパース
-//   buildSchemaJsonLd() — Article + FAQPage の JSON-LD 構造化データを自動生成
-
-export interface SeoFaq {
-  q: string
-  a: string
-}
-
-export interface SeoArticle {
-  title: string
-  metaDescription: string
-  markdown: string
-  faq: SeoFaq[]
-  relatedKeywords: string[]
-  schemaJsonLd: string
-  targetKeyword: string
-  provider: string
-}
-
-// 記事の切り口(検索意図のバリエーション)
-export const SEO_ANGLES = [
-  'とは?基礎から徹底解説',
-  'の選び方 — 失敗しない5つのポイント',
-  'おすすめ比較【2026年最新】',
-  'の費用・料金相場まとめ',
-  '導入事例と成功パターン',
-  'のよくある質問(FAQ)',
-  '初心者向け完全ガイド',
-  '自分でやる手順【保存版】',
-]
+// 「普通の AI 記事」を「検索1ページ目を狙える満分 SEO 記事」に引き上げる prompt を生成。
+// Deno / Vercel 両方で動く(ランタイム非依存)。
 
 // ── 満分 SEO prompt ────────────────────────────────────────────
 // 検索意図の分析 → オンページ最適化 → E-E-A-T → FAQ を AI に強制する。
@@ -77,57 +45,4 @@ export function buildSeoPrompt(keyword: string, angle: string): string {
 }`
 }
 
-// ── AI 出力のパース ────────────────────────────────────────────
-export function parseSeoResponse(
-  raw: string,
-  keyword: string,
-): Omit<SeoArticle, 'schemaJsonLd' | 'provider'> {
-  const cleaned = raw.replace(/```json\s*|\s*```/g, '').trim()
-  const obj = JSON.parse(cleaned) as Partial<{
-    title: string
-    metaDescription: string
-    markdown: string
-    faq: SeoFaq[]
-    relatedKeywords: string[]
-  }>
-  if (!obj.markdown) throw new Error('missing markdown')
-  return {
-    title: obj.title ?? keyword,
-    metaDescription: obj.metaDescription ?? '',
-    markdown: obj.markdown,
-    faq: Array.isArray(obj.faq) ? obj.faq.filter((f) => f?.q && f?.a) : [],
-    relatedKeywords: Array.isArray(obj.relatedKeywords) ? obj.relatedKeywords : [],
-    targetKeyword: keyword,
-  }
-}
-
-// ── JSON-LD 構造化データ生成(Article + FAQPage) ─────────────────
-// AI Overview / リッチリザルト対策。FAQPage は検索結果でFAQが展開され CTR が上がる。
-export function buildSchemaJsonLd(
-  a: { title: string; metaDescription: string; faq: SeoFaq[] },
-  opts: { url?: string; datePublished?: string; author?: string } = {},
-): string {
-  const datePublished = opts.datePublished ?? new Date().toISOString().slice(0, 10)
-  const graph: unknown[] = [
-    {
-      '@type': 'Article',
-      headline: a.title,
-      description: a.metaDescription,
-      datePublished,
-      dateModified: datePublished,
-      author: { '@type': 'Organization', name: opts.author ?? 'JP SEO Bot' },
-      ...(opts.url ? { mainEntityOfPage: { '@type': 'WebPage', '@id': opts.url } } : {}),
-    },
-  ]
-  if (a.faq.length > 0) {
-    graph.push({
-      '@type': 'FAQPage',
-      mainEntity: a.faq.map((f) => ({
-        '@type': 'Question',
-        name: f.q,
-        acceptedAnswer: { '@type': 'Answer', text: f.a },
-      })),
-    })
-  }
-  return JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })
-}
+// ── AI 出力のパースは各ランタイム側(generate-article)で行う。

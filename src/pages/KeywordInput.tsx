@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Sparkles, X } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
-import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax } from '../lib/difficulty'
+import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax, isValidKeyword } from '../lib/difficulty'
 import type { DifficultyTier } from '../store/types'
 
 const TIER_ORDER: DifficultyTier[] = ['easy', 'medium', 'hard']
@@ -15,7 +15,10 @@ export default function KeywordInput() {
   const [text, setText] = useState('')
 
   const trimmed = text.trim()
-  const kd = useMemo(() => (trimmed ? estimateKD(trimmed) : null), [trimmed])
+  // 有効なキーワード(2 文字以上 + 意味のある文字)でない限り、プラン提案も
+  // 開通もしない。空白・単文字・記号のみ・乱码では押せない。
+  const valid = isValidKeyword(trimmed)
+  const kd = useMemo(() => (valid ? estimateKD(trimmed) : null), [trimmed, valid])
   const myTier: DifficultyTier | null = kd !== null ? profileFromKD(kd).tier : null
   const myProfile = myTier ? TIER_PROFILES[myTier] : null
   const breakdown = myTier ? budgetBreakdown(myTier) : []
@@ -23,7 +26,7 @@ export default function KeywordInput() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!trimmed || kd === null) return
+    if (!valid || kd === null) return
     const kw = addKeyword({ keyword: trimmed, difficulty: kd })
     navigate(`/kw/${kw.id}`)
   }
@@ -68,6 +71,11 @@ export default function KeywordInput() {
               </button>
             ) : null}
           </div>
+          {trimmed && !valid ? (
+            <p className="mt-2 text-xs text-rose-500">
+              2 文字以上の有効なキーワードを入力してください。
+            </p>
+          ) : null}
         </div>
 
         {myTier && myProfile ? (
@@ -142,10 +150,14 @@ export default function KeywordInput() {
               <ul className="mt-3 space-y-1.5 text-sm">
                 {breakdown.map(b => (
                   <li key={b.label} className="flex justify-between border-b border-slate-100 pb-1.5">
-                    <span className="text-slate-600">{b.label}</span>
+                    <span className="text-slate-600">{b.label}<span className="text-[10px] text-slate-400 ml-1">(税抜)</span></span>
                     <span className="tabular-nums text-slate-900 font-semibold">¥{b.yen.toLocaleString()}</span>
                   </li>
                 ))}
+                <li className="flex justify-between pt-1 text-slate-600">
+                  <span>小計(税抜)</span>
+                  <span className="tabular-nums">¥{myProfile.monthlyBudgetYen.toLocaleString()}</span>
+                </li>
                 <li className="flex justify-between pt-1 text-xs text-slate-500">
                   <span>消費税(10%)</span>
                   <span className="tabular-nums">¥{(withTax(myProfile.monthlyBudgetYen) - myProfile.monthlyBudgetYen).toLocaleString()}</span>
@@ -168,7 +180,7 @@ export default function KeywordInput() {
 
         <button
           type="submit"
-          disabled={!trimmed}
+          disabled={!valid}
           className="w-full inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-4 text-lg font-bold text-white shadow-sm hover:bg-brand-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
         >
           <Sparkles className="size-5 mr-2" />

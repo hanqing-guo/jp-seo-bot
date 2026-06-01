@@ -11,7 +11,10 @@
 
 import { buildSeoPrompt } from '../../../api/_lib/seoGen.ts'
 
-declare const Deno: { env: { get: (k: string) => string | undefined } }
+declare const Deno: {
+  env: { get: (k: string) => string | undefined }
+  serve: (handler: (req: Request) => Response | Promise<Response>) => unknown
+}
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -60,28 +63,24 @@ async function handler(req: Request): Promise<Response> {
   const deepseek = Deno.env.get('DEEPSEEK_API_KEY')
   const anthropic = Deno.env.get('ANTHROPIC_API_KEY')
 
+  // provider 選択: DeepSeek 優先 → Claude → どちらも無ければ template。
+  const genOne =
+    deepseek ? (angle: string) => genWithDeepSeek(keyword, angle, deepseek)
+    : anthropic ? (angle: string) => genWithClaude(keyword, angle, anthropic)
+    : null
+
   let articles: DraftArticle[]
-  try {
-    if (deepseek) {
-      articles = await Promise.all(
-        Array.from({ length: count }, (_, i) =>
-          genWithDeepSeek(keyword, ANGLES[i % ANGLES.length], deepseek),
-        ),
-      )
-    } else if (anthropic) {
-      articles = await Promise.all(
-        Array.from({ length: count }, (_, i) =>
-          genWithClaude(keyword, ANGLES[i % ANGLES.length], anthropic),
-        ),
-      )
-    } else {
-      articles = Array.from({ length: count }, (_, i) =>
-        templateArticle(keyword, ANGLES[i % ANGLES.length]),
-      )
-    }
-  } catch (e) {
-    // どれか失敗したら template で穴埋め(全滅させない)
-    console.error('generation error', e)
+  if (genOne) {
+    // allSettled: 1 本失敗しても成功分は活かし、失敗した本数だけ template で穴埋め(全滅させない)。
+    const results = await Promise.allSettled(
+      Array.from({ length: count }, (_, i) => genOne(ANGLES[i % ANGLES.length])),
+    )
+    articles = results.map((r, i) => {
+      if (r.status === 'fulfilled') return r.value
+      console.error('generation error', r.reason)
+      return templateArticle(keyword, ANGLES[i % ANGLES.length])
+    })
+  } else {
     articles = Array.from({ length: count }, (_, i) =>
       templateArticle(keyword, ANGLES[i % ANGLES.length]),
     )
