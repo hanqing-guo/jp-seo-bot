@@ -6,7 +6,7 @@
   "description": "日本市場特化 SEO ボット プラットフォーム — JAPAN_SPEC v1.1 実装",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/build-blog.mjs",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
     "api:local": "deno run --allow-net --allow-env --env-file=supabase/.env supabase/functions/server.ts"
