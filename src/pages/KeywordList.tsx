@@ -36,7 +36,7 @@ export default function KeywordList() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">追跡中のキーワード</h1>
           <p className="text-sm text-slate-500 mt-1">
-            合計 {keywords.length} 件 / 毎日 Google・Yahoo の順位を自動チェック中
+            合計 {keywords.length} 件 / Google 順位は Search Console 連携で取得
           </p>
         </div>
         <Link

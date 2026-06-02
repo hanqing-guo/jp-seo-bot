@@ -252,7 +252,7 @@ export function budgetBreakdown(tier: DifficultyTier): { label: string; yen: num
 
 // 顧客向け「私たちがやること」(専門用語なし・大白話)
 export function serviceFeatures(tier: DifficultyTier): string[] {
-  const base = ['毎日、Google と Yahoo の順位を自動でチェック']
+  const base = ['Google 検索での掲載順位をチェック・記録']
   if (tier === 'easy') {
     return [
       ...base,
