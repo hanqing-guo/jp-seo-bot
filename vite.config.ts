@@ -9,6 +9,11 @@ export default defineConfig({
   build: {
     // vendor を機能別に分割して並列 fetch + ブラウザ cache hit rate を上げる。
     rollupOptions: {
+      // マルチページ:/ = 静的 LP(index.html)、/app = SPA ツール(app.html)
+      input: {
+        main: 'index.html',
+        app: 'app.html',
+      },
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
