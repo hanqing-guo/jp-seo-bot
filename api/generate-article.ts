@@ -12,7 +12,8 @@
 // 注: ローカル開発用の Deno 版は supabase/functions/generate-article/index.ts
 //     (ロジックは同一。クラウドは本ファイル、ローカルは Deno 版を使用)
 
-import { buildSeoPrompt } from './_lib/seoGen.ts'
+// 拡張子なし: Vercel Edge bundler は .ts 付き相対 import を弾く(Deno 側は supabase/ 配下で .ts 付き)。
+import { buildSeoPrompt } from './_lib/seoGen'
 
 export const config = { runtime: 'edge' }
 

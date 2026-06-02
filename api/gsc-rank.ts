@@ -6,7 +6,8 @@
 // 注: 本番は Vercel の /api/gsc-rank(本ファイル)。ローカル開発用の Deno 版は
 //     supabase/functions/gsc-rank/index.ts(ロジック同一、server.ts ルーター経由)。
 
-import { fetchGscRank } from './_lib/gscRank.ts'
+// 拡張子なし: Vercel Edge bundler は .ts 付き相対 import を弾く(Deno 側は supabase/ 配下で .ts 付き)。
+import { fetchGscRank } from './_lib/gscRank'
 
 export const config = { runtime: 'edge' }
 
