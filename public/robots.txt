@@ -21,5 +21,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-# 公開可能な記事ページが用意できたら sitemap を追加する:
-# Sitemap: https://<your-domain>/sitemap.xml
+Sitemap: https://jp-seo-bot.vercel.app/sitemap.xml
