@@ -11,7 +11,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
-        JP SEO Bot — 株式会社マジック
+        JP SEO Bot — enki
       </footer>
     </div>
   )

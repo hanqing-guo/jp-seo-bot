@@ -4,7 +4,7 @@
 // body は最小限の Markdown(## ### 段落 - **太字**)。
 
 export const SITE = 'https://jp-seo-bot.vercel.app'
-export const PUBLISHER = '株式会社マジック'
+export const PUBLISHER = 'enki'
 
 export const articles = [
   {
