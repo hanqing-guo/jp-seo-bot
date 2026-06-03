@@ -3,7 +3,7 @@
 // 新しい記事を足すときは、この配列にオブジェクトを1つ追加するだけ。
 // body は最小限の Markdown(## ### 段落 - **太字**)。
 
-export const SITE = 'https://jp-seo-bot.vercel.app'
+export const SITE = 'https://enkiseojp.com'
 export const PUBLISHER = 'enki'
 
 export const articles = [

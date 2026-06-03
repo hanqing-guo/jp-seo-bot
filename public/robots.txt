@@ -21,4 +21,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://jp-seo-bot.vercel.app/sitemap.xml
+Sitemap: https://enkiseojp.com/sitemap.xml
