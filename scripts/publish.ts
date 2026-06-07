@@ -43,7 +43,7 @@ async function generate(keyword: string, angle: string) {
     method: 'POST',
     headers: { Authorization: `Bearer ${dsKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-pro',
       messages: [{ role: 'user', content: buildSeoPrompt(keyword, angle) }],
       response_format: { type: 'json_object' },
       max_tokens: 4000,

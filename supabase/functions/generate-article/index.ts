@@ -102,7 +102,7 @@ async function genWithDeepSeek(keyword: string, angle: string, key: string): Pro
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-pro',
       messages: [{ role: 'user', content: buildPrompt(keyword, angle) }],
       response_format: { type: 'json_object' },
       max_tokens: 4000,
