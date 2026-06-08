@@ -14,6 +14,7 @@ export default function Topbar() {
           <div className="leading-tight">
             <div className="text-sm font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
               JP SEO Bot
+              <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 align-middle">ベータ</span>
             </div>
             <div className="text-[10px] text-slate-500">日本市場特化 SEO 自動化</div>
           </div>

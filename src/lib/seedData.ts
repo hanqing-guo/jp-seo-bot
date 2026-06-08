@@ -1,4 +1,7 @@
-// 初期表示用のデモ KW (3 件 — easy / medium / hard 各 1)
+// 初期表示用の KW。
+// 【内测(β运用)】自分たち(enki / enkiseojp.com)を「最初の顧客」として後台に投入する dogfood 用シード。
+// enki が実際に上げたい本物のキーワード 5 件(🟢2 / 🟡2 / 🔴1)。運用初期なので順位は
+// currentRank=null(計測中)— GSC を接続すると実順位が入る。请求はしない(料金は目安表示のみ)。
 
 import type { Keyword, RankSnapshot } from '../store/types'
 import { generateMonthlyTasks, profileFromKD, tierFromKD } from './difficulty'
@@ -54,7 +57,11 @@ function buildKeyword(
 }
 
 export const SEED_KEYWORDS: Keyword[] = [
-  buildKeyword('kw-seed-1', '渋谷 カフェ 電源 おすすめ', 22, 2, 24, 8, '2026-03-15T09:00:00Z'),
-  buildKeyword('kw-seed-2', 'BtoB リード獲得 方法',     48, 3, 52, 18, '2026-02-20T09:00:00Z'),
-  buildKeyword('kw-seed-3', 'SEO 対策 ツール',           78, 4, 62, 24, '2026-01-10T09:00:00Z'),
+  // enki 自社サイト(enkiseojp.com)の実ターゲット KW。難易度は KD 推定の目安。
+  // elapsedMonths=1 / currentRank=null = 「運用開始したばかり・順位は計測中」の正直な状態。
+  buildKeyword('kw-enki-1', 'メタディスクリプション 書き方', 25, 1, 48, null, '2026-06-01T09:00:00Z'), // 🟢
+  buildKeyword('kw-enki-2', '内部リンク 貼り方',             28, 1, 45, null, '2026-06-01T09:00:00Z'), // 🟢
+  buildKeyword('kw-enki-3', '中小企業 SEO 自分で',           45, 1, 60, null, '2026-06-02T09:00:00Z'), // 🟡
+  buildKeyword('kw-enki-4', 'AI SEO 記事 自動作成',          52, 1, 70, null, '2026-06-02T09:00:00Z'), // 🟡
+  buildKeyword('kw-enki-5', '格安 SEO 対策 おすすめ',         72, 1, 88, null, '2026-06-03T09:00:00Z'), // 🔴
 ]
