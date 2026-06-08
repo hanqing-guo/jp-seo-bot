@@ -79,7 +79,7 @@ const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
     model: MODEL,
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
-    max_tokens: 8000,
+    max_tokens: 12000,
     temperature: 0.7,
   }),
   signal: AbortSignal.timeout(180000),
@@ -89,6 +89,7 @@ if (!res.ok) {
   process.exit(1)
 }
 const data = await res.json()
+if (data.usage) console.error('[usage]', JSON.stringify(data.usage)) // token 消費(コスト集計用)
 const rawText = data?.choices?.[0]?.message?.content ?? ''
 let pkg
 try {
