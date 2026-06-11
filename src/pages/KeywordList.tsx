@@ -16,7 +16,7 @@ export default function KeywordList() {
   if (keywords.length === 0) {
     return (
       <div className="mx-auto max-w-2xl py-20 text-center">
-        <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm">
+        <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-xs">
           <Sparkles className="size-8" />
         </div>
         <h2 className="mt-4 text-2xl font-bold text-slate-900">まだキーワードがありません</h2>
@@ -25,7 +25,7 @@ export default function KeywordList() {
         </p>
         <Link
           to="/new"
-          className="mt-6 inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-brand-700"
+          className="mt-6 inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-bold text-white shadow-xs hover:bg-brand-700"
         >
           <Plus className="size-5 mr-2" />
           最初のキーワードを追加
@@ -48,7 +48,7 @@ export default function KeywordList() {
         </div>
         <Link
           to="/new"
-          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-700"
+          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-brand-700"
         >
           <Plus className="size-4 mr-1" />
           新規キーワード
@@ -76,7 +76,7 @@ function KeywordCard({ k }: { k: Keyword }) {
       <div className="flex items-start gap-3">
         <span className="text-2xl shrink-0">{profile.emoji}</span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-bold text-slate-900 break-words">{k.keyword}</h3>
+          <h3 className="text-lg font-bold text-slate-900 wrap-break-word">{k.keyword}</h3>
           <div className="mt-0.5 flex items-center gap-2 text-xs flex-wrap">
             <span className={`font-semibold ${profile.textClass}`}>{profile.label}</span>
           </div>
