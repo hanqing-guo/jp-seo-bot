@@ -15,9 +15,14 @@ export default defineConfig({
         app: 'app.html',
       },
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'icons-vendor': ['lucide-react'],
+        // Vite 8 (rolldown) は manualChunks の Object 形式非対応 → 関数形式
+        manualChunks(id) {
+          if (id.includes('node_modules/lucide-react')) return 'icons-vendor'
+          if (
+            id.includes('node_modules/react') ||
+            id.includes('node_modules/scheduler')
+          )
+            return 'react-vendor'
         },
       },
     },
