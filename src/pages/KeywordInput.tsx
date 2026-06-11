@@ -1,10 +1,11 @@
 // 画面 1 — キーワード入力 + プラン提案(簡単 / ふつう / むずかしい)
 
-import { useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Sparkles, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles, X } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax, isValidKeyword, formatYen } from '../lib/difficulty'
+import { checkSerpWeakness, type SerpCheckResult } from '../lib/serpCheck'
 import type { DifficultyTier } from '../store/types'
 
 const TIER_ORDER: DifficultyTier[] = ['easy', 'medium', 'hard']
@@ -18,7 +19,35 @@ export default function KeywordInput() {
   // 有効なキーワード(2 文字以上 + 意味のある文字)でない限り、プラン提案も
   // 開通もしない。空白・単文字・記号のみ・乱码では押せない。
   const valid = isValidKeyword(trimmed)
-  const kd = useMemo(() => (valid ? estimateKD(trimmed) : null), [trimmed, valid])
+  const heuristicKd = useMemo(() => (valid ? estimateKD(trimmed) : null), [trimmed, valid])
+
+  // SERP 実測(任意・ボタンで実行)— 結果があればヒューリスティック KD を補正する。
+  const [serp, setSerp] = useState<SerpCheckResult | null>(null)
+  const [serpLoading, setSerpLoading] = useState(false)
+  const [serpError, setSerpError] = useState<string | null>(null)
+  useEffect(() => {
+    // キーワードが変わったら実測結果は無効
+    setSerp(null)
+    setSerpError(null)
+  }, [trimmed])
+
+  async function handleSerpCheck() {
+    if (!valid || serpLoading) return
+    setSerpLoading(true)
+    setSerpError(null)
+    try {
+      setSerp(await checkSerpWeakness(trimmed))
+    } catch (e) {
+      setSerpError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSerpLoading(false)
+    }
+  }
+
+  const kd =
+    heuristicKd !== null && serp?.configured
+      ? Math.max(0, Math.min(100, heuristicKd + serp.kdAdjust))
+      : heuristicKd
   const myTier: DifficultyTier | null = kd !== null ? profileFromKD(kd).tier : null
   const myProfile = myTier ? TIER_PROFILES[myTier] : null
   const breakdown = myTier ? budgetBreakdown(myTier) : []
@@ -67,7 +96,7 @@ export default function KeywordInput() {
               autoFocus
               autoComplete="off"
               spellCheck={false}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg placeholder:text-slate-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-100"
             />
             {text ? (
               <button
@@ -97,6 +126,59 @@ export default function KeywordInput() {
                 <div className="text-[11px] text-slate-400">
                   ※ 難易度はキーワードから自動推定した目安です(実際の競合状況により前後します)
                 </div>
+              </div>
+
+              {/* SERP 実測 — 実際の検索上位 10 件から「勝てる見込み」を判定 */}
+              <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-slate-700">実際の競合をチェック</div>
+                  <button
+                    type="button"
+                    onClick={handleSerpCheck}
+                    disabled={serpLoading}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
+                  >
+                    {serpLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Search className="size-3.5" />}
+                    {serpLoading ? '検索上位を取得中…' : 'Google 上位 10 件を実測'}
+                  </button>
+                </div>
+                {serpError ? (
+                  <p className="mt-2 text-xs text-rose-500">{serpError}</p>
+                ) : serp && !serp.configured ? (
+                  <p className="mt-2 text-xs text-slate-400">
+                    実測チェックは未接続です(管理者: DATAFORSEO_LOGIN を設定すると有効になります)
+                  </p>
+                ) : serp?.configured ? (
+                  <div
+                    className={
+                      'mt-3 rounded-lg border p-3 text-sm ' +
+                      (serp.verdict === 'winnable'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                        : serp.verdict === 'fair'
+                          ? 'border-amber-200 bg-amber-50 text-amber-800'
+                          : 'border-rose-200 bg-rose-50 text-rose-800')
+                    }
+                  >
+                    {serp.verdict === 'winnable' ? (
+                      <>
+                        <span className="font-bold">勝てる見込みが高いキーワードです。</span>
+                        上位 10 件のうち {serp.weakCount} 件が個人ブログ・Q&A サイト
+                        ({serp.weakDomains.slice(0, 3).join(' / ')})— 新しいサイトでも入り込む余地があります。
+                      </>
+                    ) : serp.verdict === 'fair' ? (
+                      <>
+                        <span className="font-bold">挑戦できるキーワードです。</span>
+                        上位 10 件のうち {serp.weakCount} 件が個人サイト系。良質な記事 + 内部リンクで狙えます。
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-bold">上位 10 件がすべて企業サイトです。</span>
+                        新しいサイトには長期戦になります。まずは関連する具体的なキーワード(ロングテール)から
+                        始めることをおすすめします。
+                      </>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {TIER_ORDER.map(tier => {
@@ -190,7 +272,7 @@ export default function KeywordInput() {
         <button
           type="submit"
           disabled={!valid}
-          className="w-full inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-4 text-lg font-bold text-white shadow-sm hover:bg-brand-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+          className="w-full inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-4 text-lg font-bold text-white shadow-xs hover:bg-brand-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
         >
           <Sparkles className="size-5 mr-2" />
           このプランで始める

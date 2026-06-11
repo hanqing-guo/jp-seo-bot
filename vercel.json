@@ -6,9 +6,9 @@
   "installCommand": "npm install",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/:path((?!api/).*)",
       "has": [{ "type": "host", "value": "jp-seo-bot.vercel.app" }],
-      "destination": "https://enkiseojp.com/:path*",
+      "destination": "https://enkiseojp.com/:path",
       "permanent": true
     }
   ],

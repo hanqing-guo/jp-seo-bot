@@ -53,7 +53,7 @@ export default function KeywordDetail() {
       <header>
         <div className="flex items-baseline gap-3 flex-wrap">
           <span className="text-3xl">{profile.emoji}</span>
-          <h1 className="text-3xl font-bold text-slate-900 break-words">{kw.keyword}</h1>
+          <h1 className="text-3xl font-bold text-slate-900 wrap-break-word">{kw.keyword}</h1>
         </div>
         <div className="mt-1 flex items-center gap-3 text-sm">
           <span className={`font-semibold ${profile.textClass}`}>{profile.label}</span>

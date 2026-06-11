@@ -31,7 +31,13 @@ export async function fetchGoogleRank(keyword: string): Promise<GscRankResult> {
 
   const res = await fetch(`${base.replace(/\/$/, '')}/gsc-rank`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // VITE_API_SECRET 設定時は後端の API_SECRET 門に合わせて送る(aiArticle.ts と同一規約)。
+    headers: {
+      'Content-Type': 'application/json',
+      ...(import.meta.env.VITE_API_SECRET
+        ? { 'x-api-key': import.meta.env.VITE_API_SECRET as string }
+        : {}),
+    },
     body: JSON.stringify({ keyword }),
     // GSC API(token 交換 + query)は数秒。余裕を持って 20s。
     signal: AbortSignal.timeout(20000),

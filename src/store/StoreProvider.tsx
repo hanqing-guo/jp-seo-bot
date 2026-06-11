@@ -21,7 +21,9 @@ interface AppState {
   articles: Record<string, GeneratedArticle[]>
 }
 
-const STORAGE_KEY = 'jp-seo-bot:store-v2'
+// v3: 内测 dogfood シード(enki 自社の実 KW)に差し替えたため bump。
+// 旧 v2 の localStorage(デモ KW)は無視され、新シードで初期化される。
+const STORAGE_KEY = 'jp-seo-bot:store-v3'
 
 const initialState: AppState = {
   keywords: SEED_KEYWORDS,

@@ -2,9 +2,9 @@
 // DeepSeek / Claude / template を env で切替えて日本語 SEO 記事を生成。
 //
 // 環境変数(Vercel: Project Settings → Environment Variables で設定):
-//   DEEPSEEK_API_KEY   → DeepSeek (deepseek-chat, OpenAI 互換)
-//   ANTHROPIC_API_KEY  → Claude (claude-sonnet-4-20250514)
-//   どちらも無い        → template fallback
+//   DEEPSEEK_API_KEY   → DeepSeek V4 Pro (deepseek-v4-pro, OpenAI 互換)
+//   未設定              → template fallback
+// ※ Claude(Anthropic)は使用しない(Han 指示)。
 //
 // 入力: { keyword: string, tier?: 'easy'|'medium'|'hard', count?: number }
 // 出力: { articles: [{ title, markdown, provider }] }
@@ -48,6 +48,14 @@ const ANGLES = [
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
 
+  // API_SECRET 設定時のみ有効な共有シークレット門(未設定なら従来どおり)。
+  // バンドルに埋まるため完全防御ではないが、bot の無差別 POST による
+  // DeepSeek コスト流出を止める最低限のガード。
+  const secret = process.env.API_SECRET
+  if (secret && req.headers.get('x-api-key') !== secret) {
+    return json(401, { error: 'UNAUTHORIZED' })
+  }
+
   let body: ReqBody
   try {
     body = await req.json()
@@ -60,13 +68,9 @@ export default async function handler(req: Request): Promise<Response> {
   const count = Math.max(1, Math.min(8, body.count ?? 2))
 
   const deepseek = process.env.DEEPSEEK_API_KEY
-  const anthropic = process.env.ANTHROPIC_API_KEY
 
-  // provider 選択: DeepSeek 優先 → Claude → どちらも無ければ template。
-  const genOne =
-    deepseek ? (angle: string) => genWithDeepSeek(keyword, angle, deepseek)
-    : anthropic ? (angle: string) => genWithClaude(keyword, angle, anthropic)
-    : null
+  // provider: DeepSeek V4 Pro のみ(Han 指示で Claude/Anthropic は不使用)。キーが無ければ template。
+  const genOne = deepseek ? (angle: string) => genWithDeepSeek(keyword, angle, deepseek) : null
 
   let articles: DraftArticle[]
   if (genOne) {
@@ -112,26 +116,7 @@ async function genWithDeepSeek(keyword: string, angle: string, key: string): Pro
   return { ...parsed, provider: 'deepseek' }
 }
 
-async function genWithClaude(keyword: string, angle: string, key: string): Promise<DraftArticle> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: buildPrompt(keyword, angle) }],
-    }),
-    signal: AbortSignal.timeout(55000),
-  })
-  if (!res.ok) throw new Error(`Anthropic HTTP ${res.status}`)
-  const data = await res.json()
-  const parsed = parseArticle((data?.content?.[0]?.text ?? '') as string)
-  return { ...parsed, provider: 'claude' }
-}
+// genWithClaude 削除済み — Claude/Anthropic は使用しない(Han 指示で DeepSeek V4 Pro のみ)。
 
 function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
   const cleaned = text.replace(/```json\s*|\s*```/g, '').trim()
@@ -160,7 +145,8 @@ function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
 
 function templateArticle(keyword: string, angle: string): DraftArticle {
   const title = `${keyword}${angle}`
-  const today = new Date().toISOString().slice(0, 10)
+  // JST 基準の日付(UTC だと日本の朝に前日表示になる)
+  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   return {
     title,
     provider: 'template',

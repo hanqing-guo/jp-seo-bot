@@ -118,7 +118,9 @@ const CTA = `
     <a class="btn" href="/app">無料で試す →</a>
   </div>`
 
-const jsonld = (obj) => `<script type="application/ld+json">${JSON.stringify(obj)}</script>`
+// </script> が JSON 値に含まれると HTML パーサが script を早期終了させるためエスケープ
+const jsonld = (obj) =>
+  `<script type="application/ld+json">${JSON.stringify(obj).replace(/<\/script>/gi, '<\\/script>')}</script>`
 
 // ── 記事ページ ─────────────────────────────────────
 function renderArticle(a, others) {
@@ -202,6 +204,7 @@ function renderIndex() {
   <meta property="og:url" content="${SITE}/blog/" />
   <meta property="og:title" content="SEO ブログ | JP SEO Bot" />
   <meta property="og:description" content="日本語 SEO・AI 記事作成・オウンドメディア運用の実践ノウハウ。" />
+  <meta property="og:locale" content="ja_JP" />
   <meta property="og:image" content="${SITE}/og.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="${SITE}/og.png" />
@@ -224,9 +227,11 @@ function renderIndex() {
 
 // ── sitemap.xml 再生成(LP + ブログ一覧 + 各記事)──────
 function renderSitemap() {
+  // ブログ一覧は記事追加のたびに変わる → 最新記事の日付を lastmod に使う(決定的でビルド毎に揺れない)
+  const newest = articles.reduce((m, a) => (a.date > m ? a.date : m), '2026-06-03')
   const urls = [
     { loc: `${SITE}/`, pri: '1.0', mod: '2026-06-03' },
-    { loc: `${SITE}/blog/`, pri: '0.8', mod: '2026-06-03' },
+    { loc: `${SITE}/blog/`, pri: '0.8', mod: newest },
     ...articles.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, pri: '0.7', mod: a.date })),
   ]
   const body = urls.map((u) => `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.mod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.pri}</priority>\n  </url>`).join('\n')

@@ -52,7 +52,7 @@ function pemToDer(pem: string) {
 }
 
 /** SA で署名した JWT を OAuth トークンエンドポイントに交換し、access_token を得る。 */
-async function getAccessToken(sa: SaKey): Promise<string> {
+export async function getAccessToken(sa: SaKey): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   const header = b64urlStr(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
   const claim = b64urlStr(
@@ -86,6 +86,7 @@ async function getAccessToken(sa: SaKey): Promise<string> {
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion: jwt,
     }),
+    signal: AbortSignal.timeout(10000),
   })
   if (!res.ok) {
     throw new Error(`GSC token 取得失敗 (HTTP ${res.status}): ${(await res.text()).slice(0, 200)}`)
@@ -95,7 +96,7 @@ async function getAccessToken(sa: SaKey): Promise<string> {
   return data.access_token
 }
 
-function decodeSaKey(b64: string): SaKey {
+export function decodeSaKey(b64: string): SaKey {
   const bin = atob(b64.trim())
   const bytes = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
@@ -120,7 +121,8 @@ export async function fetchGscRank(
 
   const end = new Date()
   const start = new Date(end.getTime() - 28 * 86_400_000)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10)
+  // 日本市場プロパティのため JST 基準の日付に変換(UTC のままだと最大 1 日ずれる)
+  const fmt = (d: Date) => new Date(d.getTime() + 9 * 3_600_000).toISOString().slice(0, 10)
 
   const res = await fetch(
     `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(opts.siteUrl)}/searchAnalytics/query`,
@@ -130,6 +132,7 @@ export async function fetchGscRank(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(10000),
       body: JSON.stringify({
         startDate: fmt(start),
         endDate: fmt(end),

@@ -3,16 +3,21 @@
 import { Link } from 'react-router-dom'
 import { Plus, Search, Sparkles } from 'lucide-react'
 import { useStore } from '../store/StoreProvider'
-import { TIER_PROFILES } from '../lib/difficulty'
+import { TIER_PROFILES, withTax, formatYen } from '../lib/difficulty'
+import IndexMonitor from '../components/IndexMonitor'
 import type { Keyword } from '../store/types'
 
 export default function KeywordList() {
   const { keywords } = useStore()
 
+  // 月額合計(税込)= 各 KW を難易度別の単価(easy/medium/hard)で合算。
+  // 「キーワードの数 × 難易度別の料金」= 自助選択モデルの可視化。β運用中は請求しない(目安)。
+  const monthlyTotal = keywords.reduce((sum, k) => sum + withTax(k.monthlyBudgetYen), 0)
+
   if (keywords.length === 0) {
     return (
       <div className="mx-auto max-w-2xl py-20 text-center">
-        <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm">
+        <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-xs">
           <Sparkles className="size-8" />
         </div>
         <h2 className="mt-4 text-2xl font-bold text-slate-900">まだキーワードがありません</h2>
@@ -21,7 +26,7 @@ export default function KeywordList() {
         </p>
         <Link
           to="/new"
-          className="mt-6 inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-brand-700"
+          className="mt-6 inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-bold text-white shadow-xs hover:bg-brand-700"
         >
           <Plus className="size-5 mr-2" />
           最初のキーワードを追加
@@ -36,12 +41,15 @@ export default function KeywordList() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">追跡中のキーワード</h1>
           <p className="text-sm text-slate-500 mt-1">
-            合計 {keywords.length} 件 / Google 順位は Search Console 連携で取得
+            合計 {keywords.length} 件 ・ 月額 <span className="font-bold text-slate-700 tabular-nums">{formatYen(monthlyTotal)}</span>(税込)
+          </p>
+          <p className="text-xs text-amber-600 mt-0.5">
+            ベータ運用中 — 料金は目安です(請求は行いません)。Google 順位は Search Console 連携で取得。
           </p>
         </div>
         <Link
           to="/new"
-          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-700"
+          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-brand-700"
         >
           <Plus className="size-4 mr-1" />
           新規キーワード
@@ -53,6 +61,8 @@ export default function KeywordList() {
           <KeywordCard key={k.id} k={k} />
         ))}
       </div>
+
+      <IndexMonitor />
     </div>
   )
 }
@@ -69,7 +79,7 @@ function KeywordCard({ k }: { k: Keyword }) {
       <div className="flex items-start gap-3">
         <span className="text-2xl shrink-0">{profile.emoji}</span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-bold text-slate-900 break-words">{k.keyword}</h3>
+          <h3 className="text-lg font-bold text-slate-900 wrap-break-word">{k.keyword}</h3>
           <div className="mt-0.5 flex items-center gap-2 text-xs flex-wrap">
             <span className={`font-semibold ${profile.textClass}`}>{profile.label}</span>
           </div>
