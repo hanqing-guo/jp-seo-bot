@@ -48,6 +48,14 @@ const ANGLES = [
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
 
+  // API_SECRET 設定時のみ有効な共有シークレット門(未設定なら従来どおり)。
+  // バンドルに埋まるため完全防御ではないが、bot の無差別 POST による
+  // DeepSeek コスト流出を止める最低限のガード。
+  const secret = process.env.API_SECRET
+  if (secret && req.headers.get('x-api-key') !== secret) {
+    return json(401, { error: 'UNAUTHORIZED' })
+  }
+
   let body: ReqBody
   try {
     body = await req.json()
@@ -137,7 +145,8 @@ function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
 
 function templateArticle(keyword: string, angle: string): DraftArticle {
   const title = `${keyword}${angle}`
-  const today = new Date().toISOString().slice(0, 10)
+  // JST 基準の日付(UTC だと日本の朝に前日表示になる)
+  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   return {
     title,
     provider: 'template',

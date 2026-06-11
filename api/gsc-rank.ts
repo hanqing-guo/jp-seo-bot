@@ -16,6 +16,12 @@ declare const process: { env: Record<string, string | undefined> }
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
 
+  // API_SECRET 設定時のみ有効な共有シークレット門(generate-article と同一規約)。
+  const secret = process.env.API_SECRET
+  if (secret && req.headers.get('x-api-key') !== secret) {
+    return json(401, { error: 'UNAUTHORIZED' })
+  }
+
   let body: { keyword?: string }
   try {
     body = await req.json()

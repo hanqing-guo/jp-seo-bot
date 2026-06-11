@@ -95,7 +95,7 @@ if (!obj.title || !obj.body) {
 // ── body をレンダラ制約に合わせて安全化 ──
 function sanitizeBody(md) {
   return String(md)
-    .replace(/^\s*#\s+.*$/m, '')              // 先頭の # H1 を除去
+    .replace(/^\s*#\s+.*$/gm, '')             // # H1 を全て除去（複数あっても）
     .replace(/`/g, "'")                       // バッククォート → '（テンプレートリテラル破壊防止）
     .replace(/\$\{/g, '$（')                   // ${ を無害化
     .replace(/^\s*\d+\.\s+/gm, '- ')          // 数字リスト → 箇条書き
@@ -107,7 +107,8 @@ const body = sanitizeBody(obj.body)
 const faq = Array.isArray(obj.faq)
   ? obj.faq.filter((f) => f && f.q && f.a).map((f) => ({ q: String(f.q), a: String(f.a) }))
   : []
-const date = new Date().toISOString().slice(0, 10)
+// JST 基準の日付（UTC だと日本の朝 0〜9 時に前日になる）
+const date = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
 
 const article = {
   slug,

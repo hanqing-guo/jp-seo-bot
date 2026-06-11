@@ -141,7 +141,8 @@ function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
 
 function templateArticle(keyword: string, angle: string): DraftArticle {
   const title = `${keyword}${angle}`
-  const today = new Date().toISOString().slice(0, 10)
+  // JST 基準の日付(UTC だと日本の朝に前日表示になる)
+  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   return {
     title,
     provider: 'template',

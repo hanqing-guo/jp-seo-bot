@@ -51,7 +51,13 @@ export async function generateArticles(opts: GenerateOptions): Promise<DraftArti
   // 出させる。既存の下書きも上書きされない。
   const res = await fetch(`${base.replace(/\/$/, '')}/generate-article`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // VITE_API_SECRET 設定時は後端の API_SECRET 門に合わせて送る(未設定なら従来どおり)。
+    headers: {
+      'Content-Type': 'application/json',
+      ...(import.meta.env.VITE_API_SECRET
+        ? { 'x-api-key': import.meta.env.VITE_API_SECRET as string }
+        : {}),
+    },
     body: JSON.stringify(opts),
     // DeepSeek は 1 本あたり数十秒かかることがあるため余裕を持たせる。
     signal: AbortSignal.timeout(75000),
