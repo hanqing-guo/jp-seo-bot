@@ -194,10 +194,12 @@ export function generateMonthlyTasks(tier: DifficultyTier): MonthlyTask[] {
       tasks.push({ monthNumber: i + 1, label: labels[i], budgetYen: profile.monthlyBudgetYen, status: 'planned' })
     }
   } else if (tier === 'medium') {
+    // 被リンクの土台づくり(note/はてな・ディレクトリ登録)は月 1 から。
+    // 新規ドメインはリンクゼロのままだと何本書いても浮かない — 後回しにしない。
     const labels = [
-      'AI 記事 4 本 + 内部リンク最適化',
-      'AI 記事 4 本 + 被リンク候補リスト作成',
-      'AI 記事 4 本 + はてなブログ / note への投稿',
+      'AI 記事 4 本 + はてなブログ / note への投稿(被リンクの土台)',
+      'AI 記事 4 本 + 業界ディレクトリ登録 + 内部リンク最適化',
+      'AI 記事 4 本 + 被リンク獲得',
       'AI 記事 4 本 + 業界比較サイトへの掲載申請',
       'AI 記事 4 本 + 被リンク獲得 + 既存記事リライト',
       'AI 記事 4 本 + 順位検証 + コンテンツリフレッシュ',
@@ -206,9 +208,10 @@ export function generateMonthlyTasks(tier: DifficultyTier): MonthlyTask[] {
       tasks.push({ monthNumber: i + 1, label: labels[i], budgetYen: profile.monthlyBudgetYen, status: 'planned' })
     }
   } else {
+    // PR TIMES は月 1 から(被リンク冷スタートを最優先)。
     const labels = [
-      'AI 記事 8 本 + ピラーページ作成 + 内部リンク骨組み',
-      'AI 記事 8 本 + PR TIMES 配信 1 本 + 被リンク獲得',
+      'AI 記事 8 本 + PR TIMES 配信 1 本 + ピラーページ作成',
+      'AI 記事 8 本 + 内部リンク骨組み + 被リンク獲得',
       'AI 記事 8 本 + Qiita / Zenn 投稿 + 業界記事拡散',
       'AI 記事 8 本 + PR TIMES 配信 1 本 + Boxil 掲載申請',
       'AI 記事 8 本 + 既存記事リライト + 共起語見直し',

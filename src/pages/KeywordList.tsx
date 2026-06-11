@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Search, Sparkles } from 'lucide-react'
 import { useStore } from '../store/StoreProvider'
 import { TIER_PROFILES, withTax, formatYen } from '../lib/difficulty'
+import IndexMonitor from '../components/IndexMonitor'
 import type { Keyword } from '../store/types'
 
 export default function KeywordList() {
@@ -60,6 +61,8 @@ export default function KeywordList() {
           <KeywordCard key={k.id} k={k} />
         ))}
       </div>
+
+      <IndexMonitor />
     </div>
   )
 }

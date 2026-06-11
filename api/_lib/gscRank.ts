@@ -52,7 +52,7 @@ function pemToDer(pem: string) {
 }
 
 /** SA で署名した JWT を OAuth トークンエンドポイントに交換し、access_token を得る。 */
-async function getAccessToken(sa: SaKey): Promise<string> {
+export async function getAccessToken(sa: SaKey): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   const header = b64urlStr(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
   const claim = b64urlStr(
@@ -96,7 +96,7 @@ async function getAccessToken(sa: SaKey): Promise<string> {
   return data.access_token
 }
 
-function decodeSaKey(b64: string): SaKey {
+export function decodeSaKey(b64: string): SaKey {
   const bin = atob(b64.trim())
   const bytes = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
