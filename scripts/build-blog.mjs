@@ -104,11 +104,25 @@ const NAV = `
     <a class="btn" href="/app">無料で試す</a>
   </div></header>`
 
+// 運営者情報(2026-06-18): 全ページのフッターに掲載。検索エンジン/AIに「実在する正規の
+// 運営者」を示し E-E-A-T を補強する。特商法の住所・電話は、個人事業主のため
+// 「請求があれば遅滞なく開示」方式で表示(法定の代替表記)。
+const CONTACT = {
+  name: PUBLISHER, // enki
+  email: 'canadaleiluo@gmail.com',
+  tel: '070-1770-6868',
+  address: 'ご請求があれば遅滞なく開示いたします',
+}
+
 const FOOT = `
-  <footer class="foot"><div class="wrap foot-inner">
-    <div class="brand" style="font-size:.9rem"><span class="mark" aria-hidden="true" style="width:22px;height:22px;font-size:12px">✦</span> JP SEO Bot</div>
-    <div>提供:${PUBLISHER}</div>
-    <nav style="display:flex;gap:18px"><a href="/">トップ</a><a href="/blog/">ブログ</a><a href="/app">ダッシュボード</a></nav>
+  <footer class="foot"><div class="wrap">
+    <div class="foot-inner">
+      <div class="brand" style="font-size:.9rem"><span class="mark" aria-hidden="true" style="width:22px;height:22px;font-size:12px">✦</span> JP SEO Bot</div>
+      <nav style="display:flex;gap:18px"><a href="/">トップ</a><a href="/blog/">ブログ</a><a href="/app">ダッシュボード</a></nav>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;line-height:1.9;color:var(--ink-soft)">
+      <strong>運営者情報</strong>　運営者:${CONTACT.name}　｜　メール:<a href="mailto:${CONTACT.email}">${CONTACT.email}</a>　｜　電話:${CONTACT.tel}　｜　所在地:${CONTACT.address}　｜　<a href="/tokushoho/">特定商取引法に基づく表記</a>
+    </div>
   </div></footer>`
 
 const CTA = `
