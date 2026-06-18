@@ -16,10 +16,29 @@ const DIST = resolve(ROOT, 'dist')
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
 function md2html(md) {
-  let html = '', inList = false
+  let html = '', inList = false, tableRows = null
   const closeList = () => { if (inList) { html += '</ul>'; inList = false } }
+  // GitHub 風テーブル(| a | b |)対応。区切り行(|---|---|)はスキップ、1行目=ヘッダ。
+  const isSep = (cells) => cells.length > 0 && cells.every((c) => /^:?-+:?$/.test(c))
+  const flushTable = () => {
+    if (!tableRows) return
+    const rows = tableRows; tableRows = null
+    const [head, ...rest] = rows
+    let t = '<table><thead><tr>' + head.map((c) => `<th>${inline(c)}</th>`).join('') + '</tr></thead>'
+    if (rest.length) t += '<tbody>' + rest.map((r) => '<tr>' + r.map((c) => `<td>${inline(c)}</td>`).join('') + '</tr>').join('') + '</tbody>'
+    html += t + '</table>'
+  }
   for (const raw of md.split('\n')) {
     const line = raw.trimEnd()
+    if (line.startsWith('|') && line.endsWith('|')) {
+      closeList()
+      const cells = line.slice(1, -1).split('|').map((c) => c.trim())
+      if (isSep(cells)) continue
+      if (!tableRows) tableRows = []
+      tableRows.push(cells)
+      continue
+    }
+    flushTable()
     if (line === '') { closeList(); continue }
     if (line.startsWith('### ')) { closeList(); html += `<h3>${inline(line.slice(4))}</h3>` }
     else if (line.startsWith('## ')) { closeList(); html += `<h2>${inline(line.slice(3))}</h2>` }
@@ -27,6 +46,7 @@ function md2html(md) {
     else { closeList(); html += `<p>${inline(line)}</p>` }
   }
   closeList()
+  flushTable()
   return html
 }
 
@@ -71,6 +91,11 @@ const HEAD_COMMON = `
     .article .body ul{margin:14px 0 14px 4px;padding-left:20px}
     .article .body li{margin:7px 0;color:#2a2720}
     .article .body strong{font-weight:700}
+    .article .body table{width:100%;border-collapse:collapse;margin:22px 0;font-size:.9rem;border:1px solid var(--line)}
+    .article .body th,.article .body td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+    .article .body thead th{background:#efeada;font-weight:700}
+    .article .body tbody tr:nth-child(even){background:#faf8f1}
+    .article .body table{display:block;overflow-x:auto}
     .cta-box{margin:44px 0;padding:30px;border:1px solid var(--accent);border-radius:18px;background:#f3f5ff;text-align:center}
     .cta-box h3{font-family:var(--font-display);font-weight:800;font-size:1.3rem;margin-bottom:8px}
     .cta-box p{color:var(--ink-soft);font-size:.95rem;margin-bottom:18px}
