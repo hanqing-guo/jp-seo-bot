@@ -164,7 +164,11 @@ const jsonld = (obj) =>
 // ── 記事ページ ─────────────────────────────────────
 function renderArticle(a, others) {
   const url = `${SITE}/blog/${a.slug}/`
-  const related = others.map((o) => `<a href="/blog/${o.slug}/">${esc(o.title)} →</a>`).join('')
+  // 内部リンク集中: 看板記事(招牌)を関連記事の先頭に固定し、サイト内のリンク評価を主力キーワード記事へ寄せる。
+  const FLAGSHIP_SLUGS = ['ai-seo-kiji-jidou-seisei', 'chusho-kigyo-seo-jibun-de', 'ownedmedia-gaichu-hiyou']
+  const flagFirst = others.filter((o) => FLAGSHIP_SLUGS.includes(o.slug))
+  const restRelated = others.filter((o) => !FLAGSHIP_SLUGS.includes(o.slug)).slice(0, 3)
+  const related = [...flagFirst, ...restRelated].map((o) => `<a href="/blog/${o.slug}/">${esc(o.title)} →</a>`).join('')
   const faqHtml = a.faq.map((f) => `<div class="qa"><h3>${esc(f.q)}</h3><p>${esc(f.a)}</p></div>`).join('')
   const articleLd = jsonld({
     '@context': 'https://schema.org', '@type': 'Article',
