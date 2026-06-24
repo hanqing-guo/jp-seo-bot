@@ -281,6 +281,34 @@ function renderSitemap() {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
 }
 
+// ── llms.txt 生成(AI クローラ向け・GEO)──────────────
+// articles 配列から自動生成。記事追加で勝手に最新化される(旧 public/llms.txt の手動更新漏れを防ぐ)。
+function renderLlms() {
+  const blogLines = articles.map((a) => `- ${a.title}: ${SITE}/blog/${a.slug}/`).join('\n')
+  return `# JP SEO Bot
+
+> 日本市場特化の SEO プラットフォーム。キーワードを入力するだけで、AI が日本語 SEO 記事を自動生成し、Google 掲載順位を Search Console 連携で記録し、検索難易度に応じた最適プランを自動で提案します。中小企業・個人事業主向け、月額 ¥3,300 から、無料トライアルあり。
+
+## できること
+- キーワード検索難易度の自動判定(KD 0-100 → かんたん / ふつう / むずかしい)
+- AI による日本語 SEO 記事の自動生成 — 検索意図分析・E-E-A-T・FAQ・構造化データ(JSON-LD)対応
+- Google 掲載順位を Search Console 連携で記録(Yahoo! JAPAN は Google 検索エンジン採用のため近似)
+- 難易度別の料金プランを自動提案(総額・税込表示)
+
+## 料金プラン(税込・目安)
+- かんたん(3 ヶ月で 1 ページ目目標): ¥3,300 / 月
+- ふつう(6 ヶ月): ¥6,600 / 月
+- むずかしい(10 ヶ月): ¥13,200 / 月
+- 無料トライアル: 登録不要、ブラウザから試せる
+
+## ブログ記事 — 日本語 SEO・AI 記事作成の実践ガイド
+${blogLines}
+
+## 提供元
+${PUBLISHER} — JP SEO Bot(${SITE}/)
+`
+}
+
 // ── 出力 ───────────────────────────────────────────
 function write(rel, content) {
   const path = resolve(DIST, rel)
@@ -296,4 +324,5 @@ for (const a of articles) {
   out.push(write(`blog/${a.slug}/index.html`, renderArticle(a, others)))
 }
 out.push(write('sitemap.xml', renderSitemap()))
+out.push(write('llms.txt', renderLlms()))
 console.log(`[build-blog] generated ${out.length} files:\n  ${out.join('\n  ')}`)
