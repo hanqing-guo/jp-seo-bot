@@ -18,7 +18,8 @@ declare const Deno: {
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  // x-api-key: フロントが VITE_API_SECRET 設定時に送る共有シークレットヘッダ(無いと preflight で弾かれる)
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
