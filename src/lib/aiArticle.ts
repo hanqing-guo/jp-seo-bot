@@ -88,7 +88,8 @@ const ANGLES = [
 function templateArticles(opts: GenerateOptions): DraftArticle[] {
   const { keyword, count } = opts
   const co = coKeywords(keyword)
-  const today = new Date().toISOString().slice(0, 10)
+  // JST 基準の日付(UTC だと日本の朝 0〜9 時に前日表示になる。api 側 templateArticle と同一規約)
+  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   const articles: DraftArticle[] = []
 
   for (let i = 0; i < count; i++) {

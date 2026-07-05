@@ -146,7 +146,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const refreshGoogleRank = useCallback<StoreCtx['refreshGoogleRank']>(async (kwId, keyword) => {
     const result = await fetchGoogleRank(keyword)
     if (result.configured) {
-      const today = new Date().toISOString().slice(0, 10)
+      // JST 基準の日付(UTC だと日本の朝 0〜9 時に前日の日付でスナップショットされ、
+      // 「当日 upsert」の日界が 9 時にずれる)。api 側 templateArticle と同一規約。
+      const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
       setState(prev => ({
         ...prev,
         keywords: prev.keywords.map(k => {
