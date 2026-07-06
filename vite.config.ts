@@ -1,8 +1,29 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Connect } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// 本番(Vercel)は vercel.json の rewrite(/app/(.*) → /app.html)が SPA の深いパスを
+// 捌くが、dev / preview サーバーには対応する回退が無く、/app/new 等を直接開く・
+// リロードすると LP(index.html)が表示されていた。dev / preview でも同じ回退を行う。
+function appSpaFallback(): Connect.NextHandleFunction {
+  return (req, _res, next) => {
+    if (req.url && /^\/app(\/|$|\?)/.test(req.url)) req.url = '/app.html'
+    next()
+  }
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'app-spa-fallback',
+      configureServer(server) {
+        server.middlewares.use(appSpaFallback())
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(appSpaFallback())
+      },
+    },
+  ],
   server: {
     port: 5180,
   },
