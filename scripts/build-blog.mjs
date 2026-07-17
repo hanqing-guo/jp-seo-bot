@@ -24,6 +24,8 @@ const inline = (s) => esc(s)
       ? `<a href="${href}">${text}</a>`
       : `<a href="${href}" target="_blank" rel="noopener">${text}</a>`)
 function md2html(md) {
+  // [体験談/データを追記] は編集ゲート(ソースに残して人間が一次情報を足す目印)。読者には表示しない。
+  md = md.replaceAll('[体験談/データを追記]', '')
   let html = '', inList = false, tableRows = null
   const closeList = () => { if (inList) { html += '</ul>'; inList = false } }
   // GitHub 風テーブル(| a | b |)対応。区切り行(|---|---|)はスキップ、1行目=ヘッダ。
