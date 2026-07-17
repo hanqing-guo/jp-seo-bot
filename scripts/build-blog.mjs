@@ -14,7 +14,15 @@ const DIST = resolve(ROOT, 'dist')
 
 // ── 最小 Markdown → HTML ──────────────────────────────
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+// [text](url) リンク対応(2026-07-17): 本文内の文脈内部リンク(看板記事へ評価を寄せる)と
+// 権威ある外部引用(Google 公式ドキュメント等 → E-E-A-T の「根拠を示す」)を可能にする。
+// href は / 始まりの内部パスか https? の絶対 URL のみ許可。外部リンクは rel="noopener"。
+const inline = (s) => esc(s)
+  .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/\[([^\]]+)\]\((\/[^)\s]*|https?:\/\/[^)\s]+)\)/g, (_m, text, href) =>
+    href.startsWith('/')
+      ? `<a href="${href}">${text}</a>`
+      : `<a href="${href}" target="_blank" rel="noopener">${text}</a>`)
 function md2html(md) {
   let html = '', inList = false, tableRows = null
   const closeList = () => { if (inList) { html += '</ul>'; inList = false } }
@@ -108,6 +116,11 @@ const HEAD_COMMON = `
     .related h2{font-size:1.1rem;font-weight:700;margin-bottom:14px}
     .related a{display:block;padding:10px 0;color:var(--accent-deep);font-weight:500}
     .related a:hover{color:var(--accent)}
+    .author-box{margin:40px 0 0;padding:22px 24px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+    .author-box .author-name{font-weight:700;font-size:1rem}
+    .author-box .author-title{color:var(--accent-deep);font-size:.82rem;font-weight:700;margin:2px 0 8px}
+    .author-box p{color:var(--ink-soft);font-size:.88rem;margin:0}
+    .card .card-date{color:var(--ink-soft);font-size:.78rem;margin-top:10px}
     .crumbs{font-size:.82rem;color:var(--ink-soft);margin-bottom:4px}
     .crumbs a:hover{color:var(--accent)}
     /* index */
@@ -137,6 +150,14 @@ const CONTACT = {
   email: 'canadaleiluo@gmail.com',
   tel: '070-1770-6868',
   address: 'ご請求があれば遅滞なく開示いたします',
+}
+
+// 著者情報(2026-07-17・E-E-A-T): 匿名の組織署名 → 実在の開発者による Person 署名へ。
+// SEO 教学ジャンルの上位競合は全て具名の専門家著者。誇張した肩書は書かない(事実のみ)。
+const AUTHOR = {
+  name: 'Han Guo',
+  title: 'JP SEO Bot 開発者・enki 代表',
+  bio: 'JP SEO Bot の開発者。本ブログの記事は、JP SEO Bot を実際に運用して得た検証データと、自サイト(enkiseojp.com)での実践結果に基づいて執筆しています。',
 }
 
 const FOOT = `
@@ -170,13 +191,18 @@ function renderArticle(a, others) {
   const restRelated = others.filter((o) => !FLAGSHIP_SLUGS.includes(o.slug)).slice(0, 3)
   const related = [...flagFirst, ...restRelated].map((o) => `<a href="/blog/${o.slug}/">${esc(o.title)} →</a>`).join('')
   const faqHtml = a.faq.map((f) => `<div class="qa"><h3>${esc(f.q)}</h3><p>${esc(f.a)}</p></div>`).join('')
+  // dateUpdated(任意フィールド): リライト時に更新し、Google へ freshness 信号を渡す。無ければ公開日。
+  const mod = a.dateUpdated ?? a.date
   const articleLd = jsonld({
     '@context': 'https://schema.org', '@type': 'Article',
     headline: a.title, description: a.description, inLanguage: 'ja',
-    datePublished: a.date, dateModified: a.date,
+    datePublished: a.date, dateModified: mod,
     image: `${SITE}/og.png`, mainEntityOfPage: url,
-    author: { '@type': 'Organization', name: PUBLISHER },
-    publisher: { '@type': 'Organization', name: PUBLISHER, url: SITE + '/' },
+    author: { '@type': 'Person', name: AUTHOR.name, jobTitle: AUTHOR.title, url: SITE + '/' },
+    publisher: {
+      '@type': 'Organization', name: PUBLISHER, url: SITE + '/',
+      logo: { '@type': 'ImageObject', url: `${SITE}/og.png` },
+    },
   })
   const faqLd = jsonld({
     '@context': 'https://schema.org', '@type': 'FAQPage',
@@ -193,6 +219,7 @@ function renderArticle(a, others) {
   return `<!doctype html>
 <html lang="ja">
 <head>
+  ${HEAD_COMMON}
   <title>${esc(a.title)} | JP SEO Bot</title>
   <meta name="description" content="${esc(a.description)}" />
   <link rel="canonical" href="${url}" />
@@ -208,7 +235,6 @@ function renderArticle(a, others) {
   ${articleLd}
   ${faqLd}
   ${crumbLd}
-  ${HEAD_COMMON}
 </head>
 <body>
   ${NAV}
@@ -217,8 +243,13 @@ function renderArticle(a, others) {
       <div class="crumbs"><a href="/">トップ</a> › <a href="/blog/">ブログ</a></div>
       <span class="kw">${esc(a.keyword)}</span>
       <h1>${esc(a.title)}</h1>
-      <div class="date">公開日:${a.date}</div>
+      <div class="date">公開日:${a.date}${a.dateUpdated ? `　最終更新日:${a.dateUpdated}` : ''}</div>
       <div class="body">${md2html(a.body)}</div>
+      <div class="author-box">
+        <div class="author-name">著者:${esc(AUTHOR.name)}</div>
+        <div class="author-title">${esc(AUTHOR.title)}</div>
+        <p>${esc(AUTHOR.bio)}</p>
+      </div>
       ${CTA}
       <section class="faqs"><h2>よくある質問</h2>${faqHtml}</section>
       <section class="related"><h2>関連記事</h2>${related}</section>
@@ -231,15 +262,27 @@ function renderArticle(a, others) {
 
 // ── ブログ一覧ページ ─────────────────────────────────
 function renderIndex() {
-  const cards = articles.map((a) => `
+  // 新しい順に並べる(freshness の UX)。更新日があればそちらを優先。
+  const sorted = [...articles].sort((x, y) => ((y.dateUpdated ?? y.date) < (x.dateUpdated ?? x.date) ? -1 : 1))
+  const cards = sorted.map((a) => `
     <a class="card" href="/blog/${a.slug}/">
       <div class="kw">${esc(a.keyword)}</div>
       <h2>${esc(a.title)}</h2>
       <p>${esc(a.description)}</p>
+      <p class="card-date">公開日:${a.date}${a.dateUpdated ? `　最終更新日:${a.dateUpdated}` : ''}</p>
     </a>`).join('')
+  const collectionLd = jsonld({
+    '@context': 'https://schema.org', '@type': 'CollectionPage',
+    name: 'SEO ブログ | JP SEO Bot', url: `${SITE}/blog/`, inLanguage: 'ja',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: sorted.map((a, i) => ({ '@type': 'ListItem', position: i + 1, name: a.title, url: `${SITE}/blog/${a.slug}/` })),
+    },
+  })
   return `<!doctype html>
 <html lang="ja">
 <head>
+  ${HEAD_COMMON}
   <title>SEO ブログ | JP SEO Bot</title>
   <meta name="description" content="日本語 SEO・AI 記事作成・オウンドメディア運用のノウハウを発信。中小企業が自分で SEO を進めるための実践ガイドです。" />
   <link rel="canonical" href="${SITE}/blog/" />
@@ -251,7 +294,7 @@ function renderIndex() {
   <meta property="og:image" content="${SITE}/og.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="${SITE}/og.png" />
-  ${HEAD_COMMON}
+  ${collectionLd}
 </head>
 <body>
   ${NAV}
@@ -271,11 +314,11 @@ function renderIndex() {
 // ── sitemap.xml 再生成(LP + ブログ一覧 + 各記事)──────
 function renderSitemap() {
   // ブログ一覧は記事追加のたびに変わる → 最新記事の日付を lastmod に使う(決定的でビルド毎に揺れない)
-  const newest = articles.reduce((m, a) => (a.date > m ? a.date : m), '2026-06-03')
+  const newest = articles.reduce((m, a) => { const d = a.dateUpdated ?? a.date; return d > m ? d : m }, '2026-06-03')
   const urls = [
     { loc: `${SITE}/`, pri: '1.0', mod: '2026-06-03' },
     { loc: `${SITE}/blog/`, pri: '0.8', mod: newest },
-    ...articles.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, pri: '0.7', mod: a.date })),
+    ...articles.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, pri: '0.7', mod: a.dateUpdated ?? a.date })),
   ]
   const body = urls.map((u) => `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.mod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.pri}</priority>\n  </url>`).join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
