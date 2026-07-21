@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Hiragino Sans";
+        src: local("Hiragino Sans");
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #0b1220;
+      }
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+        color: #f2f5fa;
+      }
+
+      /* ---------- 背景装飾(常駐) ---------- */
+      .bg-layer { position: absolute; inset: 0; z-index: 0; }
+      .glow-top {
+        position: absolute; top: -300px; left: 140px;
+        width: 800px; height: 800px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(62, 139, 255, 0.22) 0%, rgba(62, 139, 255, 0) 68%);
+      }
+      .glow-bottom {
+        position: absolute; bottom: -260px; right: -160px;
+        width: 700px; height: 700px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(62, 139, 255, 0.13) 0%, rgba(62, 139, 255, 0) 70%);
+      }
+      .ghost-seo {
+        position: absolute; top: 620px; left: -40px;
+        font-size: 340px; font-weight: 900; letter-spacing: 0.04em;
+        color: rgba(120, 165, 235, 0.05); white-space: nowrap;
+      }
+      .grid-lines {
+        position: absolute; inset: 0;
+        background-image:
+          linear-gradient(rgba(98, 140, 210, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(98, 140, 210, 0.05) 1px, transparent 1px);
+        background-size: 120px 120px;
+      }
+
+      /* ---------- シーン共通 ---------- */
+      .scene {
+        position: absolute; inset: 0; z-index: 1;
+      }
+      .scene-content {
+        display: flex; flex-direction: column; align-items: center;
+        width: 100%; height: 100%;
+        padding: 300px 70px 780px;
+        gap: 36px;
+      }
+
+      /* ---------- S1 フック ---------- */
+      #s1 .hook-kicker {
+        font-size: 44px; font-weight: 800; letter-spacing: 0.12em;
+        color: #7fb2ff; background: rgba(62, 139, 255, 0.14);
+        padding: 14px 34px; border-radius: 999px;
+        border: 2px solid rgba(62, 139, 255, 0.45);
+      }
+      #s1 .hook-title {
+        font-size: 108px; font-weight: 900; line-height: 1.22;
+        text-align: center; margin-top: 8px;
+      }
+      #s1 .hook-title .red { color: #ff6b6b; }
+      #s1 .search-mock {
+        margin-top: 34px; width: 780px;
+        background: #101a2e; border: 2px solid #22304c; border-radius: 24px;
+        padding: 34px 40px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      #s1 .search-bar {
+        display: flex; align-items: center; gap: 18px;
+        background: #182642; border-radius: 999px; padding: 20px 30px;
+        font-size: 34px; color: #9db4d8;
+      }
+      #s1 .search-bar .dot { width: 26px; height: 26px; border-radius: 50%;
+        border: 4px solid #5f7ba6; border-right-color: transparent; transform: rotate(-40deg); }
+      #s1 .zero {
+        margin-top: 26px; font-size: 52px; font-weight: 800; color: #ff6b6b;
+        text-align: center; letter-spacing: 0.06em;
+      }
+      #s1 .zero small { display: block; font-size: 28px; color: #8fa5c8; font-weight: 600; margin-top: 8px; }
+
+      /* ---------- WPカード共通(S2 / S4) ---------- */
+      .wp-card {
+        width: 860px; background: #101a2e;
+        border: 2px solid #22304c; border-radius: 26px;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+      .wp-head {
+        display: flex; align-items: center; gap: 16px;
+        padding: 26px 36px; background: #182642;
+        font-size: 34px; font-weight: 700; color: #c9d8f2;
+      }
+      .wp-head .crumb { color: #7fb2ff; }
+      .wp-body { padding: 40px 36px 44px; display: flex; flex-direction: column; gap: 28px; }
+      .wp-row {
+        display: flex; align-items: flex-start; gap: 26px;
+        background: #16233d; border-radius: 18px; padding: 30px 30px;
+        border: 2px solid transparent;
+      }
+      .wp-row.danger { border-color: rgba(255, 107, 107, 0.65); background: rgba(255, 107, 107, 0.08); }
+      .wp-row.safe { border-color: rgba(55, 214, 122, 0.6); background: rgba(55, 214, 122, 0.07); }
+      .checkbox {
+        flex: 0 0 auto; width: 52px; height: 52px; border-radius: 12px;
+        border: 4px solid #d43d3d; background: #d43d3d;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 38px; font-weight: 900; color: #fff;
+      }
+      .checkbox.empty { background: transparent; border-color: #37d67a; color: transparent; }
+      .wp-label { font-size: 36px; line-height: 1.5; font-weight: 700; color: #e8eefb; }
+      .wp-label small { display: block; font-size: 27px; color: #8fa5c8; font-weight: 600; margin-top: 10px; }
+      .badge {
+        align-self: center; font-size: 40px; font-weight: 900; letter-spacing: 0.1em;
+        padding: 18px 44px; border-radius: 999px;
+      }
+      .badge.danger { color: #ff8080; background: rgba(255, 107, 107, 0.13); border: 3px solid #ff6b6b; }
+      .badge.safe { color: #5fe39a; background: rgba(55, 214, 122, 0.12); border: 3px solid #37d67a; }
+      .scene-heading {
+        font-size: 66px; font-weight: 900; line-height: 1.3; text-align: center;
+      }
+      .scene-heading .accent { color: #7fb2ff; }
+      .scene-heading .red { color: #ff6b6b; }
+      .scene-heading .green { color: #37d67a; }
+
+      /* ---------- S3 結果 ---------- */
+      #s3 .noindex-title {
+        font-size: 96px; font-weight: 900; line-height: 1.25; text-align: center;
+      }
+      #s3 .noindex-title .red { color: #ff6b6b; }
+      #s3 .page-strip { display: flex; gap: 26px; margin-top: 30px; }
+      #s3 .mini-page {
+        width: 210px; height: 264px; background: #101a2e;
+        border: 2px solid #22304c; border-radius: 18px;
+        display: flex; flex-direction: column; gap: 14px; padding: 22px 20px;
+        position: relative;
+      }
+      #s3 .mini-page .bar { height: 16px; border-radius: 8px; background: #24365a; }
+      #s3 .mini-page .bar.w60 { width: 60%; }
+      #s3 .mini-page .bar.w85 { width: 85%; }
+      #s3 .mini-page .cross {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 150px; font-weight: 900; color: #ff6b6b;
+        text-shadow: 0 10px 34px rgba(255, 107, 107, 0.35);
+      }
+      #s3 .stat-ring {
+        margin-top: 44px; display: flex; align-items: center; gap: 30px;
+        background: #101a2e; border: 2px solid #22304c; border-radius: 24px;
+        padding: 32px 44px;
+      }
+      #s3 .stat-num {
+        font-size: 92px; font-weight: 900; color: #ff6b6b; line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+      #s3 .stat-label { font-size: 36px; font-weight: 700; color: #c9d8f2; line-height: 1.5; }
+
+      /* ---------- S5 CTA ---------- */
+      #s5 .cta-logo {
+        font-size: 62px; font-weight: 900; letter-spacing: 0.05em;
+        color: #7fb2ff;
+      }
+      #s5 .cta-logo span { color: #f2f5fa; }
+      #s5 .cta-main {
+        font-size: 96px; font-weight: 900; line-height: 1.3; text-align: center; margin-top: 6px;
+      }
+      #s5 .cta-main .accent { color: #7fb2ff; }
+      #s5 .cta-sub { font-size: 42px; font-weight: 700; color: #b9cbe8; margin-top: 4px; }
+      #s5 .cta-pill {
+        margin-top: 36px; font-size: 52px; font-weight: 800; letter-spacing: 0.03em;
+        color: #0b1220; background: #7fb2ff;
+        padding: 26px 64px; border-radius: 999px;
+        box-shadow: 0 18px 54px rgba(62, 139, 255, 0.4);
+      }
+      #s5 .cta-arrow { margin-top: 30px; font-size: 58px; color: #5fe39a; font-weight: 900; }
+
+      /* ---------- 字幕(テロップ) ---------- */
+      #captions {
+        position: absolute; left: 0; right: 0; bottom: 560px;
+        display: flex; justify-content: center;
+        z-index: 5;
+      }
+      .cg {
+        position: absolute;
+        max-width: 940px;
+        padding: 26px 40px;
+        background: rgba(7, 11, 20, 0.82);
+        border: 2px solid rgba(62, 139, 255, 0.35);
+        border-radius: 22px;
+        font-size: 54px; font-weight: 800; line-height: 1.42;
+        text-align: center;
+        opacity: 0; visibility: hidden;
+      }
+      .cg em { font-style: normal; color: #7fb2ff; }
+      .cg em.red { color: #ff8080; }
+      .cg em.green { color: #5fe39a; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="56"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- 常駐背景(クリップではない) -->
+      <div class="bg-layer" data-layout-ignore data-layout-allow-overflow>
+        <div class="grid-lines"></div>
+        <div class="glow-top" id="glow-top"></div>
+        <div class="glow-bottom" id="glow-bottom"></div>
+        <div class="ghost-seo" id="ghost-seo" data-layout-ignore data-layout-allow-overflow>SEO</div>
+      </div>
+
+      <!-- S1 フック 0-4.5s -->
+      <div id="s1" class="scene clip" data-start="0" data-duration="4.5" data-track-index="1">
+        <div class="scene-content">
+          <div class="hook-kicker" id="s1-kicker">サイト運営者は今すぐ確認</div>
+          <div class="hook-title" id="s1-title">Googleに<br /><span class="red">出てこない!?</span></div>
+          <div class="search-mock" id="s1-mock">
+            <div class="search-bar"><span class="dot"></span>あなたのサイト名…</div>
+            <div class="zero">検索結果 0件<small>何度探しても見つからない…</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S2 WordPress設定 4.0-19.8s -->
+      <div id="s2" class="scene clip" data-start="4" data-duration="15.8" data-track-index="2">
+        <div class="scene-content">
+          <div class="scene-heading" id="s2-heading">原因は<span class="red">たった1つの設定</span>かも</div>
+          <div class="wp-card" id="s2-card">
+            <div class="wp-head"><span class="crumb">設定</span><span>›</span><span class="crumb">表示設定</span></div>
+            <div class="wp-body">
+              <div class="wp-row danger" id="s2-row">
+                <div class="checkbox" id="s2-check">✓</div>
+                <div class="wp-label">検索エンジンがサイトを<br />インデックスしないようにする<small>※ ここにチェックが入っていると検索に出ません</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="badge danger" id="s2-badge">この状態は危険！</div>
+        </div>
+      </div>
+
+      <!-- S3 結果 19.3-32.3s -->
+      <div id="s3" class="scene clip" data-start="19.3" data-duration="13" data-track-index="1">
+        <div class="scene-content">
+          <div class="noindex-title" id="s3-title">どんな良い記事も<br /><span class="red">絶対に登録されない</span></div>
+          <div class="page-strip" id="s3-strip">
+            <div class="mini-page"><div class="bar w85"></div><div class="bar"></div><div class="bar w60"></div><div class="cross s3-cross">✕</div></div>
+            <div class="mini-page"><div class="bar w60"></div><div class="bar w85"></div><div class="bar"></div><div class="cross s3-cross">✕</div></div>
+            <div class="mini-page"><div class="bar"></div><div class="bar w60"></div><div class="bar w85"></div><div class="cross s3-cross">✕</div></div>
+          </div>
+          <div class="stat-ring" id="s3-stat">
+            <div class="stat-num">No.1</div>
+            <div class="stat-label">インデックスされない<br />原因の中で一番多いミス</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S4 解決 31.8-44.3s -->
+      <div id="s4" class="scene clip" data-start="31.8" data-duration="12.5" data-track-index="2">
+        <div class="scene-content">
+          <div class="scene-heading" id="s4-heading"><span class="green">チェックを外す</span>だけでOK</div>
+          <div class="wp-card" id="s4-card">
+            <div class="wp-head"><span class="crumb">設定</span><span>›</span><span class="crumb">表示設定</span></div>
+            <div class="wp-body">
+              <div class="wp-row danger" id="s4-row">
+                <div class="checkbox" id="s4-check">✓</div>
+                <div class="wp-label">検索エンジンがサイトを<br />インデックスしないようにする<small id="s4-note">チェックを外して「変更を保存」</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="badge safe" id="s4-badge" style="opacity: 0">インデックスOK！</div>
+        </div>
+      </div>
+
+      <!-- S5 CTA 43.8-56s -->
+      <div id="s5" class="scene clip" data-start="43.8" data-duration="12.2" data-track-index="1">
+        <div class="scene-content">
+          <div class="cta-logo" id="s5-logo">JP SEO <span>Bot</span></div>
+          <div class="cta-main" id="s5-main">キーワードの勝敗<br /><span class="accent">1分で無料診断</span></div>
+          <div class="cta-sub" id="s5-sub">詳しい対処法はブログで解説中</div>
+          <div class="cta-pill" id="s5-pill">enkiseojp.com</div>
+          <div class="cta-arrow" id="s5-arrow">▼ 概要欄からどうぞ ▼</div>
+        </div>
+      </div>
+
+      <!-- 字幕レイヤー(クリップではない) -->
+      <div id="captions"></div>
+
+      <!-- ナレーション -->
+      <audio id="narration" data-start="0.6" data-duration="52.2" data-track-index="4" src="narration.wav" data-volume="1"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+
+      // 字幕グループ: captions.json の実測時刻 +0.6s(音声開始オフセット)
+      // 長文は読点で分割し、比例配分で時刻を割り当て済み
+      var GROUPS = [
+        { s: 0.6,  e: 3.99, h: '自分のサイトが<br/><em>Googleに全然出てこない</em>' },
+        { s: 4.0,  e: 5.7,  h: 'それ、もしかすると' },
+        { s: 5.7,  e: 9.3,  h: 'ワードプレスの<br/><em class="red">たった一つの設定ミス</em>かも' },
+        { s: 9.6,  e: 12.2, h: '<em>設定 › 表示設定</em> を開いて' },
+        { s: 12.2, e: 16.5, h: '「検索エンジンがサイトを<br/>インデックスしないようにする」' },
+        { s: 16.5, e: 18.9, h: '<em class="red">チェックが入っていませんか？</em>' },
+        { s: 19.3, e: 23.4, h: 'これがオンのままだと<br/>どんなに良い記事を書いても' },
+        { s: 23.4, e: 26.1, h: 'Googleには<em class="red">絶対に登録されません</em>' },
+        { s: 26.4, e: 31.8, h: '実はこれ、インデックスされない<br/>原因の中で<em class="red">一番多いミス</em>なんです' },
+        { s: 32.1, e: 34.3, h: '<em class="green">チェックを外すだけ</em>で' },
+        { s: 34.3, e: 38.6, h: '翌日にはすんなりインデックス<br/>されたケースもたくさんあります' },
+        { s: 38.9, e: 41.3, h: 'いますぐ自分のサイトを確認して' },
+        { s: 41.3, e: 43.3, h: '<em class="green">チェックを外してください</em>' },
+        { s: 43.7, e: 47.2, h: '詳しい対処法は<br/><em>ブログ</em>で解説しています' },
+        { s: 47.5, e: 50.0, h: 'あなたのキーワードが<br/><em>勝てるかどうか</em>' },
+        { s: 50.0, e: 55.0, h: '<em>無料診断</em>は概要欄からどうぞ！' }
+      ];
+
+      var capLayer = document.getElementById('captions');
+      GROUPS.forEach(function (g, i) {
+        var el = document.createElement('div');
+        el.className = 'cg';
+        el.id = 'cg-' + i;
+        el.innerHTML = g.h;
+        capLayer.appendChild(el);
+      });
+
+      var tl = gsap.timeline({ paused: true });
+
+      // ---------- 常駐背景のアンビエント ----------
+      tl.fromTo('#glow-top', { scale: 1 }, { scale: 1.14, duration: 4, ease: 'sine.inOut', repeat: 13, yoyo: true }, 0);
+      tl.fromTo('#glow-bottom', { scale: 1.08 }, { scale: 0.96, duration: 4, ease: 'sine.inOut', repeat: 13, yoyo: true }, 0);
+      tl.fromTo('#ghost-seo', { x: 0 }, { x: 60, duration: 28, ease: 'none', repeat: 1, yoyo: true }, 0);
+
+      // ---------- S1 フック ----------
+      tl.fromTo('#s1-kicker', { y: -36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 0.15);
+      tl.fromTo('#s1-title', { scale: 0.86, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(1.6)' }, 0.35);
+      tl.fromTo('#s1-mock', { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, 0.8);
+
+      // ---------- S2 WordPress設定 ----------
+      tl.fromTo('#s2-heading', { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: 'power3.out' }, 4.3);
+      tl.fromTo('#s2-card', { y: 110, opacity: 0 }, { y: 0, opacity: 1, duration: 0.65, ease: 'expo.out' }, 4.6);
+      tl.fromTo('#s2-badge', { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' }, 5.4);
+      tl.fromTo('#s2-check', { boxShadow: '0 0 0 0 rgba(255,107,107,0.7)' },
+        { boxShadow: '0 0 0 22px rgba(255,107,107,0)', duration: 1.1, ease: 'power1.out', repeat: 11 }, 6.0);
+      tl.fromTo('#s2-row', { x: 0 }, { x: -7, duration: 0.07, repeat: 5, yoyo: true, ease: 'power1.inOut' }, 16.6);
+
+      // ---------- S3 結果 ----------
+      tl.fromTo('#s3-title', { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, 19.6);
+      tl.fromTo('#s3-strip', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: 'expo.out' }, 20.1);
+      tl.fromTo('.s3-cross', { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2.4)', stagger: 0.18 }, 20.7);
+      tl.fromTo('#s3-stat', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: 'back.out(1.7)' }, 26.5);
+
+      // ---------- S4 解決 ----------
+      tl.fromTo('#s4-heading', { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: 'power3.out' }, 32.1);
+      tl.fromTo('#s4-card', { y: 110, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, 32.4);
+      // チェックが外れる瞬間
+      tl.to('#s4-check', { scale: 0, duration: 0.35, ease: 'back.in(2)' }, 34.6);
+      tl.set('#s4-check', { className: 'checkbox empty' }, 34.98);
+      tl.fromTo('#s4-check', { scale: 0.4 }, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 35.0);
+      tl.set('#s4-row', { className: 'wp-row safe' }, 35.0);
+      tl.fromTo('#s4-badge', { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: 'back.out(2.2)' }, 35.4);
+
+      // ---------- S5 CTA ----------
+      tl.fromTo('#s5-logo', { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 44.1);
+      tl.fromTo('#s5-main', { scale: 0.85, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(1.6)' }, 44.4);
+      tl.fromTo('#s5-sub', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, 44.8);
+      tl.fromTo('#s5-pill', { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: 'expo.out' }, 45.1);
+      tl.fromTo('#s5-arrow', { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' }, 45.6);
+      tl.fromTo('#s5-pill', { scale: 1 }, { scale: 1.05, duration: 0.9, ease: 'sine.inOut', repeat: 9, yoyo: true }, 46.0);
+      // 最終フェード(最終シーンのみ許可)
+      tl.to('#s5 .scene-content', { opacity: 0, duration: 0.7, ease: 'power2.in' }, 55.2);
+      tl.to('.bg-layer', { opacity: 0, duration: 0.7, ease: 'power2.in' }, 55.2);
+
+      // ---------- 字幕タイムライン ----------
+      GROUPS.forEach(function (g, i) {
+        var el = '#cg-' + i;
+        tl.set(el, { visibility: 'visible' }, g.s);
+        tl.fromTo(el, { opacity: 0, y: 18, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.22, ease: 'power2.out' }, g.s);
+        tl.to(el, { opacity: 0, scale: 0.97, duration: 0.12, ease: 'power2.in' }, g.e - 0.12);
+        tl.set(el, { opacity: 0, visibility: 'hidden' }, g.e);
+      });
+
+      // 字幕セルフリント: 各グループが end 後に確実に消えているか
+      GROUPS.forEach(function (g, i) {
+        var el = document.getElementById('cg-' + i);
+        if (!el) return;
+        tl.seek(g.e + 0.01);
+        var c = window.getComputedStyle(el);
+        if (c.opacity !== '0' && c.visibility !== 'hidden') {
+          console.warn('[caption-lint] group ' + i + ' still visible at t=' + (g.e + 0.01).toFixed(2) + 's');
+        }
+      });
+      tl.seek(0);
+
+      window.__timelines['main'] = tl;
+    </script>
+  </body>
+</html>
