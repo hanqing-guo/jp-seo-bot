@@ -146,6 +146,16 @@ if (close < 0) {
   console.error('✗ blog-articles.mjs に articles 配列の ] が見つからない')
   process.exit(1)
 }
+// 重複 slug ガード(2026-08 追加): 同じ slug を二重登録すると同一 URL を複数記事が
+// 奪い合い、後勝ちで一方が消え、sitemap にも重複 <loc> が出る(実際に
+// structured-data-kakikata で3回発生し、インデックス低下の一因になった)。
+// 追記前に既存 slug を検査し、重複なら書き込まずに終了する。
+if (new RegExp(`slug:\\s*["']${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`).test(src)) {
+  console.error(`✗ slug="${slug}" は既に blog-articles.mjs に存在します。重複追記を中止しました。`)
+  console.error('  既存記事を更新する場合は scripts/expand-article.mjs を使うか、別の slug を指定してください。')
+  process.exit(1)
+}
+
 const updated = src.slice(0, close) + block + src.slice(close)
 writeFileSync(path, updated)
 console.log(`[gen-article] appended slug=${slug} (model=${MODEL}). 次は npm run build で検証してください。`)
