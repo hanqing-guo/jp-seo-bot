@@ -362,6 +362,23 @@ function write(rel, content) {
   return rel
 }
 
+// 重複 slug ガード(2026-08 追加): 自動投稿が同じ slug を二重登録すると、
+// 同一 URL を2記事が奪い合い、後勝ちで一方が消え、sitemap にも重複 <loc> が出る
+// (実際に structured-data-kakikata で発生し、インデックス低下の一因となった)。
+// ビルド時に落として、壊れた状態が本番へ出るのを防ぐ。
+{
+  const seen = new Map()
+  const dups = []
+  for (const [i, a] of articles.entries()) {
+    if (seen.has(a.slug)) dups.push(`${a.slug} (index ${seen.get(a.slug)} と ${i})`)
+    else seen.set(a.slug, i)
+  }
+  if (dups.length) {
+    console.error(`[build-blog] 重複 slug を検出しました:\n  ${dups.join('\n  ')}\n content/blog-articles.mjs から重複記事を削除してください。`)
+    process.exit(1)
+  }
+}
+
 const out = []
 out.push(write('blog/index.html', renderIndex()))
 for (const a of articles) {
