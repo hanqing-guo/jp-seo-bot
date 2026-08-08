@@ -232,7 +232,11 @@ function renderArticle(a, others) {
   <meta property="og:title" content="${esc(a.title)}" />
   <meta property="og:description" content="${esc(a.description)}" />
   <meta property="og:image" content="${SITE}/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${esc(a.title)}" />
+  <meta name="twitter:description" content="${esc(a.description)}" />
   <meta name="twitter:image" content="${SITE}/og.png" />
   ${articleLd}
   ${faqLd}
@@ -289,10 +293,15 @@ function renderIndex() {
   <meta name="description" content="日本語 SEO・AI 記事作成・オウンドメディア運用のノウハウを発信。中小企業が自分で SEO を進めるための実践ガイドです。" />
   <link rel="canonical" href="${SITE}/blog/" />
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="JP SEO Bot" />
   <meta property="og:url" content="${SITE}/blog/" />
   <meta property="og:title" content="SEO ブログ | JP SEO Bot" />
   <meta property="og:description" content="日本語 SEO・AI 記事作成・オウンドメディア運用の実践ノウハウ。" />
   <meta property="og:locale" content="ja_JP" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:title" content="SEO ブログ | JP SEO Bot" />
+  <meta name="twitter:description" content="日本語 SEO・AI 記事作成・オウンドメディア運用の実践ノウハウ。中小企業が自分で SEO を進めるためのガイドです。" />
   <meta property="og:image" content="${SITE}/og.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="${SITE}/og.png" />
