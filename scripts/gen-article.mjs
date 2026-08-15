@@ -69,7 +69,7 @@ const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
     model: MODEL,
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
-    max_tokens: 6000,
+    max_tokens: 16000, // V4 Pro は reasoning にもトークンを使うため、少なすぎると本文が空のまま切れる
     temperature: 0.7,
   }),
   signal: AbortSignal.timeout(120000),
