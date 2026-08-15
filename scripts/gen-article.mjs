@@ -72,7 +72,7 @@ const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
     max_tokens: 16000, // V4 Pro は reasoning にもトークンを使うため、少なすぎると本文が空のまま切れる
     temperature: 0.7,
   }),
-  signal: AbortSignal.timeout(120000),
+  signal: AbortSignal.timeout(300000), // V4 Pro は reasoning が長く、120s では書き終わる前に中断される
 })
 if (!res.ok) {
   console.error(`✗ DeepSeek HTTP ${res.status}: ${await res.text()}`)
