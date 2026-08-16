@@ -4,6 +4,7 @@
 //
 // 実行: package.json の build スクリプトが `vite build && node scripts/build-blog.mjs` で呼ぶ。
 
+import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -25,7 +26,13 @@ const inline = (s) => esc(s)
       : `<a href="${href}" target="_blank" rel="noopener">${text}</a>`)
 function md2html(md) {
   // [体験談/データを追記] は編集ゲート(ソースに残して人間が一次情報を足す目印)。読者には表示しない。
-  md = md.replaceAll('[体験談/データを追記]', '')
+  // 2026-08 修正: 完全一致の replaceAll では DeepSeek が生成する変種
+  //   [体験談/データを追記：具体的な指示文] / 【体験談/データを追記】
+  // を取りこぼし、編集用マーカーが本番HTMLにそのまま出ていた(geo-toha, local-seo-toha 等)。
+  // 角括弧・全角括弧・コロン以降の説明文ごと落とす。
+  md = md.replace(/[[【]\s*体験談\s*\/\s*データを追記[^\]】]*[\]】]/g, '')
+  // 除去後に「ここに  を入れる」のような二重スペースが残るため畳む。
+  md = md.replace(/[ 　]{2,}/g, ' ')
   let html = '', inList = false, tableRows = null
   const closeList = () => { if (inList) { html += '</ul>'; inList = false } }
   // GitHub 風テーブル(| a | b |)対応。区切り行(|---|---|)はスキップ、1行目=ヘッダ。
@@ -61,15 +68,38 @@ function md2html(md) {
 }
 
 // ── 共有 head(フォント + デザイントークン)──────────────
+// LP(index.html)と完全に同じ URL にしておくこと。1文字でもズレると別リソース扱いになり、
+// トップ→記事の遷移でフォントキャッシュが効かない。
+// ── <title> の表示幅制御 ──────────────────────────
+// 2026-08 修正: 全記事に無条件で " | JP SEO Bot" を足していたため、日本語SERPの
+// 表示幅(半角換算 約62)を超える記事が24本あり、末尾のキーワードが切り捨てられていた。
+// 収まる記事だけブランド名を付ける。全角=2 / 半角・半角カナ=1 で数える。
+const titleWidth = (s) =>
+  [...s].reduce((n, c) => n + (c.charCodeAt(0) < 0x100 || /[｡-ﾟ]/.test(c) ? 1 : 2), 0)
+const BRAND = ' | JP SEO Bot'
+const TITLE_MAX = 62
+const pageTitle = (t) => (titleWidth(t) + titleWidth(BRAND) <= TITLE_MAX ? t + BRAND : t)
+
+const FONT_CSS =
+  'https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap'
+
 const HEAD_COMMON = `
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Language" content="ja" />
+  <!-- max-image-preview:large が無いと Google 検索・Discover でサムネイルが小さく出る。
+       max-snippet:-1 はスニペット長の制限を外す(AI Overview / GEO でも引用されやすい)。 -->
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="theme-color" content="#1f44e6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <!-- 2026-08 修正: 以前は同期 stylesheet で、802KB/850 @font-face を第三者オリジンから
+       取りに行く間 FCP がブロックされていた。media=print → onload で非同期化する。
+       Shippori は 700/800 しか使っていないので 600 を削除(LP と同一URL = キャッシュ共有)。 -->
+  <link rel="preload" as="style" href="${FONT_CSS}" />
+  <link rel="stylesheet" href="${FONT_CSS}" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="${FONT_CSS}" /></noscript>
   <style>
     :root{--paper:#f4f0e7;--card:#fffdf7;--ink:#16140d;--ink-soft:#534d42;--line:#dcd4c2;--accent:#1f44e6;--accent-deep:#142fa3;
       --font-display:"Shippori Mincho B1","Hiragino Mincho ProN",serif;--font-sans:"Zen Kaku Gothic New",system-ui,sans-serif;}
@@ -190,7 +220,15 @@ function renderArticle(a, others) {
   // 内部リンク集中: 看板記事(招牌)を関連記事の先頭に固定し、サイト内のリンク評価を主力キーワード記事へ寄せる。
   const FLAGSHIP_SLUGS = ['ai-seo-kiji-jidou-seisei', 'chusho-kigyo-seo-jibun-de', 'ownedmedia-gaichu-hiyou']
   const flagFirst = others.filter((o) => FLAGSHIP_SLUGS.includes(o.slug))
-  const restRelated = others.filter((o) => !FLAGSHIP_SLUGS.includes(o.slug)).slice(0, 3)
+  // 2026-08 修正: 以前は others の先頭3件を固定で拾っていたため、全記事が同じ3本を指し、
+  // 50記事中36記事が他記事から一切リンクされない孤立状態だった。
+  // 自記事の位置を起点に巡回して選ぶことで、被リンクが全記事へ均等に回る。
+  // articles の順序は固定なので、ビルドのたびに関連記事が揺れることはない。
+  const pool = others.filter((o) => !FLAGSHIP_SLUGS.includes(o.slug))
+  const self = articles.findIndex((o) => o.slug === a.slug)
+  const restRelated = pool.length
+    ? Array.from({ length: Math.min(3, pool.length) }, (_, k) => pool[(self + k) % pool.length])
+    : []
   const related = [...flagFirst, ...restRelated].map((o) => `<a href="/blog/${o.slug}/">${esc(o.title)} →</a>`).join('')
   const faqHtml = a.faq.map((f) => `<div class="qa"><h3>${esc(f.q)}</h3><p>${esc(f.a)}</p></div>`).join('')
   // dateUpdated(任意フィールド): リライト時に更新し、Google へ freshness 信号を渡す。無ければ公開日。
@@ -222,7 +260,7 @@ function renderArticle(a, others) {
 <html lang="ja">
 <head>
   ${HEAD_COMMON}
-  <title>${esc(a.title)} | JP SEO Bot</title>
+  <title>${esc(pageTitle(a.title))}</title>
   <meta name="description" content="${esc(a.description)}" />
   <link rel="canonical" href="${url}" />
   <meta property="og:type" content="article" />
@@ -323,11 +361,24 @@ function renderIndex() {
 }
 
 // ── sitemap.xml 再生成(LP + ブログ一覧 + 各記事)──────
+// 2026-08 修正: トップの lastmod が '2026-06-03' 固定で、LP を更新しても sitemap 上は
+// 6月のままだった(実際の index.html は 8月まで更新済み)。git の最終コミット日を使う。
+// コミット日なのでビルドのたびに揺れない。git が無い環境では固定日にフォールバック。
+function lpLastmod() {
+  try {
+    const d = execFileSync('git', ['log', '-1', '--format=%cs', '--', 'index.html'], {
+      cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d
+  } catch {}
+  return '2026-06-03'
+}
+
 function renderSitemap() {
   // ブログ一覧は記事追加のたびに変わる → 最新記事の日付を lastmod に使う(決定的でビルド毎に揺れない)
   const newest = articles.reduce((m, a) => { const d = a.dateUpdated ?? a.date; return d > m ? d : m }, '2026-06-03')
   const urls = [
-    { loc: `${SITE}/`, pri: '1.0', mod: '2026-06-03' },
+    { loc: `${SITE}/`, pri: '1.0', mod: lpLastmod() },
     { loc: `${SITE}/blog/`, pri: '0.8', mod: newest },
     ...articles.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, pri: '0.7', mod: a.dateUpdated ?? a.date })),
   ]
@@ -384,6 +435,25 @@ function write(rel, content) {
   }
   if (dups.length) {
     console.error(`[build-blog] 重複 slug を検出しました:\n  ${dups.join('\n  ')}\n content/blog-articles.mjs から重複記事を削除してください。`)
+    process.exit(1)
+  }
+}
+
+// 編集用プレースホルダ残存ガード(2026-08 追加): 編集ゲートの変種や地の文の
+// 「〜を追記予定」が本番HTMLに漏れ、読者に編集メモが見える事故が実際に起きた
+// (geo-toha / local-seo-toha / kyougou-bunseki-yarikata / seo-monji-suu)。
+// md2html の除去では地の文パターンは消せないため、原稿側の書き換えを強制する。
+{
+  const LEAK = /体験談\s*\/\s*データを追記|追記予定|ここに(追記|追加)|記載予定|ここに\s+を入れる/
+  const leaked = articles
+    .map((a) => ({ slug: a.slug, hit: (md2html(a.body).match(LEAK) || [])[0] }))
+    .filter((x) => x.hit)
+  if (leaked.length) {
+    console.error(
+      `[build-blog] 編集用プレースホルダが本文に残っています:\n  ${leaked
+        .map((x) => `${x.slug} … 「${x.hit}」`)
+        .join('\n  ')}\n content/blog-articles.mjs の該当箇所を実データに置き換えるか、文ごと削除してください。`
+    )
     process.exit(1)
   }
 }

@@ -7,6 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google" content="notranslate" />
     <meta http-equiv="Content-Language" content="ja" />
+    <!-- max-image-preview:large が無いと Google 検索・Discover でサムネイルが小さく出る。
+         max-snippet:-1 はスニペット長の制限を外す(AI Overview / GEO でも引用されやすい)。 -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <title>JP SEO Bot — AIで日本語SEO記事を自動生成するSEO自動化ツール</title>
     <meta name="description" content="キーワードを入れるだけで、AI が日本語 SEO 記事を自動生成。Google 掲載順位は Search Console 連携で記録し、難易度別の最適プランも自動提案する SEO 自動化ツールです。" />
     <meta name="theme-color" content="#1f44e6" />
@@ -81,7 +84,12 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <!-- 2026-08 修正: 同期 stylesheet だと 802KB/850 @font-face の取得が FCP をブロックする。
+         media=print → onload で非同期化。Shippori は 700/800 しか使っていないので 500 を削除。
+         URL は scripts/build-blog.mjs の FONT_CSS と完全一致させること(キャッシュ共有)。 -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" /></noscript>
 
     <style>
       :root {
