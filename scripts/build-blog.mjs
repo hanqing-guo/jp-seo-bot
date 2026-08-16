@@ -362,23 +362,39 @@ function renderIndex() {
 
 // ── sitemap.xml 再生成(LP + ブログ一覧 + 各記事)──────
 // 2026-08 修正: トップの lastmod が '2026-06-03' 固定で、LP を更新しても sitemap 上は
-// 6月のままだった(実際の index.html は 8月まで更新済み)。git の最終コミット日を使う。
-// コミット日なのでビルドのたびに揺れない。git が無い環境では固定日にフォールバック。
-function lpLastmod() {
+// 6月のままだった(実際の index.html は 8月まで更新済み)。
+//
+// git log から自動取得する案は不採用: Vercel のビルドは shallow clone で index.html の
+// 履歴が無く、本番だけ黙ってフォールバック値に戻る(実際に一度それで本番へ出た)。
+// そこで「定数を正とし、git が使えるローカルでだけ陳腐化を検出して落とす」方式にする。
+// これなら本番・ローカルで出力が完全に一致し、更新漏れはローカルビルドで必ず捕まる。
+const LP_LASTMOD = '2026-08-17'
+
+function assertLpLastmodFresh() {
+  let actual
   try {
-    const d = execFileSync('git', ['log', '-1', '--format=%cs', '--', 'index.html'], {
+    actual = execFileSync('git', ['log', '-1', '--format=%cs', '--', 'index.html'], {
       cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
     }).trim()
-    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d
-  } catch {}
-  return '2026-06-03'
+  } catch {
+    return // git が無い環境(Vercel 等)では検証しない。定数をそのまま使う。
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(actual)) return
+  if (actual > LP_LASTMOD) {
+    console.error(
+      `[build-blog] sitemap のトップページ lastmod が古いです。\n` +
+        `  index.html の最終コミット: ${actual}\n  LP_LASTMOD 定数: ${LP_LASTMOD}\n` +
+        ` scripts/build-blog.mjs の LP_LASTMOD を ${actual} に更新してください。`
+    )
+    process.exit(1)
+  }
 }
 
 function renderSitemap() {
   // ブログ一覧は記事追加のたびに変わる → 最新記事の日付を lastmod に使う(決定的でビルド毎に揺れない)
   const newest = articles.reduce((m, a) => { const d = a.dateUpdated ?? a.date; return d > m ? d : m }, '2026-06-03')
   const urls = [
-    { loc: `${SITE}/`, pri: '1.0', mod: lpLastmod() },
+    { loc: `${SITE}/`, pri: '1.0', mod: LP_LASTMOD },
     { loc: `${SITE}/blog/`, pri: '0.8', mod: newest },
     ...articles.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, pri: '0.7', mod: a.dateUpdated ?? a.date })),
   ]
@@ -457,6 +473,8 @@ function write(rel, content) {
     process.exit(1)
   }
 }
+
+assertLpLastmodFresh()
 
 const out = []
 out.push(write('blog/index.html', renderIndex()))
