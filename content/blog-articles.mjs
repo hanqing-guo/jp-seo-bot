@@ -183,7 +183,7 @@ AIの下書きをそのまま公開すると、「どこにでもある薄い記
   },
   {
     slug: 'ai-seo-kiji-jidou-seisei',
-    title: 'SEO記事をAIで自動生成するには?メリットとGoogleペナルティの回避法',
+    title: 'SEO記事をAIで自動生成する方法とペナルティ回避策',
     description:
       'AIでSEO記事を自動生成する方法とメリット、そして「薄い量産記事」でGoogleペナルティを受けないための注意点を解説。検索意図・E-E-A-T・FAQに対応した記事をAIで効率的に作るコツを紹介します。',
     keyword: 'AI SEO 記事 自動生成',
@@ -441,7 +441,7 @@ AIでのSEO記事自動生成は、正しく使えば最強の時短装置です
   },
   {
     slug: 'seo-keyword-difficulty-shirabe-kata',
-    title: 'SEOキーワードの難易度の調べ方｜初心者でも勝てる狙い目の見つけ方',
+    title: 'SEOキーワード難易度の調べ方｜狙い目の見つけ方',
     description:
       'SEOキーワードの難易度を自分で調べる方法を解説。検索結果・上位サイト・関連語から競合性を見極め、新規サイトでも上位を狙える「勝てるキーワード」の選び方を初心者向けに紹介します。',
     keyword: 'SEO キーワード 難易度 調べ方',
@@ -915,7 +915,7 @@ URLは変えない、必要な情報を削りすぎない——これが基本�
   },
   {
     slug: "naibu-link-harikata",
-    title: "内部リンクの貼り方完全ガイド｜SEO効果を高めるアンカーテキストと適正本数",
+    title: "内部リンクの貼り方｜アンカーテキストと適正本数",
     description: "内部リンクの貼り方の基本ルールから、アンカーテキストの書き方、貼りすぎの逆効果と適正本数、本文中・関連記事・パンくずの使い分けまで、SEO効果を最大化するポイントを解説します。",
     keyword: "内部リンク 貼り方",
     date: "2026-06-03",
@@ -1772,7 +1772,7 @@ Google Search ConsoleとGoogle Analyticsを入れていない場合は、まず�
   },
   {
     slug: "deepseek-seo-article-guide",
-    title: "【2026年最新】DeepSeekとClaudeを活用したSEO記事作成の完全ガイド",
+    title: "【2026年最新】DeepSeek・ClaudeでSEO記事作成ガイド",
     description: "DeepSeekやClaudeを活用してGoogleペナルティを回避し、検索1ページ目を獲得するためのSEO記事作成手法とE-E-A-T対策を、自社の実測データとあわせて解説します。",
     keyword: "DeepSeek SEO 記事作成",
     date: "2026-08-08",
@@ -3479,7 +3479,7 @@ Google公式のSearch Centralでは、サイトマップ送信後すぐにイン
   },
   {
     slug: "ai-seo-google-penalty-guide",
-    title: "AI記事はGoogleペナルティになる？検索品質ガイドラインとE-E-A-T対策のすべて",
+    title: "AI記事はGoogleペナルティになる？E-E-A-T対策の全手順",
     description: "AIで生成した記事がGoogleのペナルティを受ける原因と、検索上位を獲得するためのE-E-A-T担保・編集ガイドラインを徹底解説。",
     keyword: "AI記事 Googleペナルティ",
     date: "2026-08-17",
@@ -3505,7 +3505,7 @@ Google検索セントラルのガイダンスでは、以下のように明記�
 - **表面的なリライト・独自性の欠如**：上位表示されている他社サイトの情報をAIで要約しただけで、新しい価値のない記事。
 - **誤情報の放置（ハルシネーション）**：事実確認（ファクトチェック）を行わず、誤ったデータや古い情報を掲載している記事。
 
-具体的な回避手順は [SEO記事をAIで自動生成するには?メリットとGoogleペナルティの回避法](/blog/ai-seo-kiji-jidou-seisei/) でも解説しています。
+具体的な回避手順は [SEO記事をAIで自動生成する方法とペナルティ回避策](/blog/ai-seo-kiji-jidou-seisei/) でも解説しています。
 
 ## 検索1ページ目を維持するための「E-E-A-T」強化テクニック
 
@@ -3542,7 +3542,7 @@ AI記事がペナルティを受けるかどうかは、生成手段ではなく
   },
   {
     slug: "japanese-ai-seo-tools-comparison",
-    title: "【2026年最新】日本語対応AI SEO記事作成ツール徹底比較｜選び方と活用法",
+    title: "【2026年最新】日本語AI SEOツール比較｜選び方と活用法",
     description: "2026年最新の日本語対応AI SEOツールを徹底比較。検索難易度判定から記事生成、Search Console連携までの選び方を解説。",
     keyword: "日本語 AI SEOツール 比較",
     date: "2026-08-17",
