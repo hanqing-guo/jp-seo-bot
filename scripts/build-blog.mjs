@@ -371,6 +371,10 @@ function renderIndex() {
 const LP_LASTMOD = '2026-08-17'
 
 function assertLpLastmodFresh() {
+  // CI(Vercel 等)では検証しない。shallow clone だと `git log -1 -- index.html` が
+  // 実際の更新日ではなく先頭コミットの日付を返すため、コミットのたびに誤検知で
+  // 本番ビルドが落ちる。陳腐化の検出はローカルビルドだけで行えば目的を満たす。
+  if (process.env.CI || process.env.VERCEL) return
   let actual
   try {
     actual = execFileSync('git', ['log', '-1', '--format=%cs', '--', 'index.html'], {
