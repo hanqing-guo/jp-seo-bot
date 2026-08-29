@@ -39,7 +39,7 @@
       "@type": "SoftwareApplication",
       "name": "JP SEO Bot",
       "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
+      "operatingSystem": "All",
       "url": "https://enkiseojp.com/",
       "inLanguage": "ja",
       "description": "日本市場特化の SEO プラットフォーム。キーワードを入れるだけで AI が日本語 SEO 記事(検索意図・E-E-A-T・FAQ 対応)を自動生成し、Google 掲載順位を Search Console 連携で記録、難易度別の最適プランを自動提案します。",
@@ -199,7 +199,7 @@
       @media (max-width: 720px) { .features { grid-template-columns: 1fr; } }
 
       /* steps */
-      .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+      .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; list-style: none; margin: 0; padding: 0; }
       .step { position: relative; padding-top: 26px; border-top: 2px solid var(--ink); }
       .step .n { position: absolute; top: -2px; left: 0; height: 2px; background: var(--accent); width: 38px; }
       .step .label { font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; line-height: 1; }
@@ -224,10 +224,22 @@
 
       /* faq */
       .faq { display: grid; gap: 0; border-top: 1px solid var(--line); }
-      .qa { padding: 26px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 40px 1fr; gap: 18px; }
+      .qa { border-bottom: 1px solid var(--line); }
+      .qa > summary { padding: 26px 0; display: grid; grid-template-columns: 40px 1fr 24px; gap: 18px; align-items: start;
+        cursor: pointer; list-style: none; }
+      .qa > summary::-webkit-details-marker { display: none; }
+      .qa > summary::after { content: "+"; justify-self: end; font-family: var(--font-display); font-weight: 800;
+        font-size: 1.3rem; line-height: 1.1; color: var(--ink-soft); }
+      .qa[open] > summary::after { content: "\2212"; color: var(--accent); }
+      .qa > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
       .qa .q-mark { font-family: var(--font-display); font-weight: 800; color: var(--accent); font-size: 1.4rem; line-height: 1; }
-      .qa h3 { font-size: 1.12rem; font-weight: 700; margin-bottom: 8px; }
+      .qa h3 { font-size: 1.12rem; font-weight: 700; }
+      .qa-body { padding: 0 0 26px 58px; }
       .qa p { color: var(--ink-soft); font-size: .96rem; }
+      @media (max-width: 720px) {
+        .qa > summary { grid-template-columns: 28px 1fr 20px; gap: 12px; }
+        .qa-body { padding-left: 40px; }
+      }
 
       /* final cta */
       .final { text-align: center; padding: clamp(64px, 10vw, 120px) 0; }
@@ -341,11 +353,11 @@
             <h2 class="display onview">使い方は、3 ステップ。</h2>
             <p class="onview">専門知識は不要。キーワードを決めるところから記事の下書きまで、迷わず進めます。</p>
           </div>
-          <div class="steps">
-            <div class="step onview"><span class="n"></span><div class="label display">01</div><h3>キーワードを入力</h3><p>上位表示したいキーワードを入れるだけ。難易度を自動で判定します。</p></div>
-            <div class="step onview"><span class="n"></span><div class="label display">02</div><h3>プランを確認</h3><p>難易度に応じた記事本数・期間・料金(税込)を自動で提案します。</p></div>
-            <div class="step onview"><span class="n"></span><div class="label display">03</div><h3>AI が記事を生成</h3><p>検索意図・E-E-A-T・FAQ 対応の日本語 SEO 記事を、その場で下書き作成。</p></div>
-          </div>
+          <ol class="steps">
+            <li class="step onview"><span class="n"></span><div class="label display">01</div><h3>キーワードを入力</h3><p>上位表示したいキーワードを入れるだけ。難易度を自動で判定します。</p></li>
+            <li class="step onview"><span class="n"></span><div class="label display">02</div><h3>プランを確認</h3><p>難易度に応じた記事本数・期間・料金(税込)を自動で提案します。</p></li>
+            <li class="step onview"><span class="n"></span><div class="label display">03</div><h3>AI が記事を生成</h3><p>検索意図・E-E-A-T・FAQ 対応の日本語 SEO 記事を、その場で下書き作成。</p></li>
+          </ol>
         </div>
       </section>
 
@@ -403,11 +415,11 @@
         <div class="wrap">
           <div class="sec-head"><h2 class="display onview">よくある質問</h2></div>
           <div class="faq">
-            <div class="qa onview"><div class="q-mark">Q</div><div><h3>JP SEO Bot とは何ですか?</h3><p>キーワードを入れるだけで AI が日本語 SEO 記事を自動生成し、Google 掲載順位を Search Console 連携で記録する、日本市場特化の SEO 自動化ツールです。検索難易度の判定から記事作成、順位記録までを一つの画面で行えます。</p></div></div>
-            <div class="qa onview"><div class="q-mark">Q</div><div><h3>本当に検索結果の1ページ目に上がりますか?</h3><p>順位は競合状況により変動するため、上位表示を保証するものではありません。難易度別に「3〜10 ヶ月で 1 ページ目」を目標とし、AI 記事の継続作成と内部最適化で到達確率を高める設計です。</p></div></div>
-            <div class="qa onview"><div class="q-mark">Q</div><div><h3>料金はいくらですか?</h3><p>難易度に応じて、かんたん ¥3,300 / ふつう ¥6,600 / むずかしい ¥13,200(いずれも月額・税込)の 3 プランを自動で提案します。</p></div></div>
-            <div class="qa onview"><div class="q-mark">Q</div><div><h3>AI が書いた記事は Google のペナルティ対象になりませんか?</h3><p>検索意図の分析・E-E-A-T・FAQ・構造化データに対応し、各記事には体験談や一次データを人が 1 つ追記する「編集ゲート」を設けています。薄い量産記事ではなく、読者の検索意図を満たす記事を作る設計です。</p></div></div>
-            <div class="qa onview"><div class="q-mark">Q</div><div><h3>Yahoo! JAPAN の順位も分かりますか?</h3><p>順位の取得は Google Search Console 連携によるもので、Google 掲載順位を記録します。Yahoo! JAPAN の自然検索は Google の検索エンジンを採用しているため、Google 順位が近似値として参考になります。</p></div></div>
+            <details class="qa onview" open><summary><span class="q-mark" aria-hidden="true">Q</span><h3>JP SEO Bot とは何ですか?</h3></summary><div class="qa-body"><p>キーワードを入れるだけで AI が日本語 SEO 記事を自動生成し、Google 掲載順位を Search Console 連携で記録する、日本市場特化の SEO 自動化ツールです。検索難易度の判定から記事作成、順位記録までを一つの画面で行えます。</p></div></details>
+            <details class="qa onview"><summary><span class="q-mark" aria-hidden="true">Q</span><h3>本当に検索結果の1ページ目に上がりますか?</h3></summary><div class="qa-body"><p>順位は競合状況により変動するため、上位表示を保証するものではありません。難易度別に「3〜10 ヶ月で 1 ページ目」を目標とし、AI 記事の継続作成と内部最適化で到達確率を高める設計です。</p></div></details>
+            <details class="qa onview"><summary><span class="q-mark" aria-hidden="true">Q</span><h3>料金はいくらですか?</h3></summary><div class="qa-body"><p>難易度に応じて、かんたん ¥3,300 / ふつう ¥6,600 / むずかしい ¥13,200(いずれも月額・税込)の 3 プランを自動で提案します。</p></div></details>
+            <details class="qa onview"><summary><span class="q-mark" aria-hidden="true">Q</span><h3>AI が書いた記事は Google のペナルティ対象になりませんか?</h3></summary><div class="qa-body"><p>検索意図の分析・E-E-A-T・FAQ・構造化データに対応し、各記事には体験談や一次データを人が 1 つ追記する「編集ゲート」を設けています。薄い量産記事ではなく、読者の検索意図を満たす記事を作る設計です。</p></div></details>
+            <details class="qa onview"><summary><span class="q-mark" aria-hidden="true">Q</span><h3>Yahoo! JAPAN の順位も分かりますか?</h3></summary><div class="qa-body"><p>順位の取得は Google Search Console 連携によるもので、Google 掲載順位を記録します。Yahoo! JAPAN の自然検索は Google の検索エンジンを採用しているため、Google 順位が近似値として参考になります。</p></div></details>
           </div>
         </div>
       </section>

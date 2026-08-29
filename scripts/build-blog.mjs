@@ -368,7 +368,7 @@ function renderIndex() {
 // 履歴が無く、本番だけ黙ってフォールバック値に戻る(実際に一度それで本番へ出た)。
 // そこで「定数を正とし、git が使えるローカルでだけ陳腐化を検出して落とす」方式にする。
 // これなら本番・ローカルで出力が完全に一致し、更新漏れはローカルビルドで必ず捕まる。
-const LP_LASTMOD = '2026-08-17'
+const LP_LASTMOD = '2026-08-29'
 
 function assertLpLastmodFresh() {
   // CI(Vercel 等)では検証しない。shallow clone だと `git log -1 -- index.html` が
