@@ -8,6 +8,7 @@
 //       小規模サイト(数十ページ)前提。50 URL で打ち切る。
 
 import { decodeSaKey, getAccessToken } from './_lib/gscRank'
+import { apiError, apiJson, authorizePilotRequest, readJsonObject } from './_lib/apiSecurity'
 
 export const config = { runtime: 'edge' }
 
@@ -24,23 +25,29 @@ interface PageStatus {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
-
-  // API_SECRET 設定時のみ有効な共有シークレット門(generate-article と同一規約)。
-  const secret = process.env.API_SECRET
-  if (secret && req.headers.get('x-api-key') !== secret) {
-    return json(401, { error: 'UNAUTHORIZED' })
-  }
+  if (req.method !== 'POST') return apiError(405, 'METHOD_NOT_ALLOWED', { Allow: 'POST' })
+  const auth = await authorizePilotRequest(req, {
+    signingSecret: process.env.PILOT_ACCESS_SIGNING_SECRET,
+    allowedOrigin: process.env.APP_ALLOWED_ORIGIN ?? 'https://enkiseojp.com',
+    scope: 'gsc:read',
+    limit: 4,
+    windowMs: 24 * 60 * 60_000,
+    requiredResource: process.env.GSC_SITE_URL,
+  })
+  if (auth instanceof Response) return auth
+  const body = await readJsonObject(req, 256)
+  if (body instanceof Response) return body
+  if (Object.keys(body).length > 0) return apiError(400, 'INVALID_REQUEST')
 
   const saKeyB64 = process.env.GSC_SA_KEY_B64
   const siteUrl = process.env.GSC_SITE_URL
-  if (!saKeyB64 || !siteUrl) return json(200, { configured: false, pages: [] })
+  if (!saKeyB64 || !siteUrl) return apiError(503, 'FEATURE_UNAVAILABLE')
 
   try {
     const base = siteBase(siteUrl)
     const urls = (await fetchSitemapUrls(base)).slice(0, MAX_URLS)
     if (urls.length === 0) {
-      return json(200, { configured: true, total: 0, indexedCount: 0, pages: [] })
+      return apiJson(200, { configured: true, total: 0, indexedCount: 0, pages: [] })
     }
 
     const token = await getAccessToken(decodeSaKey(saKeyB64))
@@ -50,7 +57,7 @@ export default async function handler(req: Request): Promise<Response> {
         ? r.value
         : { url: urls[i], indexed: false, state: '照会失敗', lastCrawl: null },
     )
-    return json(200, {
+    return apiJson(200, {
       configured: true,
       total: pages.length,
       indexedCount: pages.filter((p) => p.indexed).length,
@@ -58,10 +65,7 @@ export default async function handler(req: Request): Promise<Response> {
     })
   } catch (e) {
     console.error('index-status error', e)
-    return json(502, {
-      error: 'INDEX_STATUS_FAILED',
-      message: e instanceof Error ? e.message : String(e),
-    })
+    return apiError(502, 'UPSTREAM_UNAVAILABLE')
   }
 }
 
@@ -105,11 +109,4 @@ async function inspectUrl(url: string, siteUrl: string, token: string): Promise<
     state: idx?.coverageState ?? '不明',
     lastCrawl: idx?.lastCrawlTime ?? null,
   }
-}
-
-function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }

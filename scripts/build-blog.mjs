@@ -25,14 +25,11 @@ const inline = (s) => esc(s)
       ? `<a href="${href}">${text}</a>`
       : `<a href="${href}" target="_blank" rel="noopener">${text}</a>`)
 function md2html(md) {
-  // [体験談/データを追記] は編集ゲート(ソースに残して人間が一次情報を足す目印)。読者には表示しない。
-  // 2026-08 修正: 完全一致の replaceAll では DeepSeek が生成する変種
-  //   [体験談/データを追記：具体的な指示文] / 【体験談/データを追記】
-  // を取りこぼし、編集用マーカーが本番HTMLにそのまま出ていた(geo-toha, local-seo-toha 等)。
-  // 角括弧・全角括弧・コロン以降の説明文ごと落とす。
-  md = md.replace(/[[【]\s*体験談\s*\/\s*データを追記[^\]】]*[\]】]/g, '')
-  // 除去後に「ここに  を入れる」のような二重スペースが残るため畳む。
-  md = md.replace(/[ 　]{2,}/g, ' ')
+  // [体験談/データを追記] は未検証であることを示す編集ゲート。
+  // マーカーだけを消すと、同じ行の架空の数値・自社成果だけが公開されてしまうため、
+  // マーカー（全角括弧・指示文つきの変種を含む）を持つ行は全文を公開対象から外す。
+  const evidenceGate = /[[【]\s*体験談\s*\/\s*データを追記[^\]】]*[\]】]/
+  md = md.split('\n').filter((line) => !evidenceGate.test(line)).join('\n')
   let html = '', inList = false, tableRows = null
   const closeList = () => { if (inList) { html += '</ul>'; inList = false } }
   // GitHub 風テーブル(| a | b |)対応。区切り行(|---|---|)はスキップ、1行目=ヘッダ。
@@ -76,7 +73,7 @@ function md2html(md) {
 // 収まる記事だけブランド名を付ける。全角=2 / 半角・半角カナ=1 で数える。
 const titleWidth = (s) =>
   [...s].reduce((n, c) => n + (c.charCodeAt(0) < 0x100 || /[｡-ﾟ]/.test(c) ? 1 : 2), 0)
-const BRAND = ' | JP SEO Bot'
+const BRAND = ' | SEO運用アシスタント'
 const TITLE_MAX = 62
 const pageTitle = (t) => (titleWidth(t) + titleWidth(BRAND) <= TITLE_MAX ? t + BRAND : t)
 
@@ -170,8 +167,8 @@ const HEAD_COMMON = `
 
 const NAV = `
   <header class="nav"><div class="wrap nav-inner">
-    <a class="brand" href="/"><span class="mark" aria-hidden="true">✦</span> JP SEO Bot</a>
-    <a class="btn" href="/app">無料で試す</a>
+    <a class="brand" href="/"><span class="mark" aria-hidden="true">✦</span> SEO運用アシスタント</a>
+    <a class="btn" href="mailto:canadaleiluo@gmail.com?subject=無料の対象サイト確認">対象サイトを確認する</a>
   </div></header>`
 
 // 運営者情報(2026-06-18): 全ページのフッターに掲載。検索エンジン/AIに「実在する正規の
@@ -188,15 +185,15 @@ const CONTACT = {
 // SEO 教学ジャンルの上位競合は全て具名の専門家著者。誇張した肩書は書かない(事実のみ)。
 const AUTHOR = {
   name: 'Han Guo',
-  title: 'JP SEO Bot 開発者・enki 代表',
-  bio: 'JP SEO Bot の開発者。本ブログの記事は、JP SEO Bot を実際に運用して得た検証データと、自サイト(enkiseojp.com)での実践結果に基づいて執筆しています。',
+  title: 'SEO運用アシスタント運営・enki 代表',
+  bio: '日本向けSEO運用アシスタントの運営者。本ブログは、自サイト(enkiseojp.com)での検証と公開情報に基づいて執筆しています。',
 }
 
 const FOOT = `
   <footer class="foot"><div class="wrap">
     <div class="foot-inner">
-      <div class="brand" style="font-size:.9rem"><span class="mark" aria-hidden="true" style="width:22px;height:22px;font-size:12px">✦</span> JP SEO Bot</div>
-      <nav style="display:flex;gap:18px"><a href="/">トップ</a><a href="/blog/">ブログ</a><a href="/app">ダッシュボード</a></nav>
+      <div class="brand" style="font-size:.9rem"><span class="mark" aria-hidden="true" style="width:22px;height:22px;font-size:12px">✦</span> SEO運用アシスタント</div>
+      <nav style="display:flex;gap:18px"><a href="/">トップ</a><a href="/blog/">ブログ</a><a href="/app">サンプルデモ</a><a href="/terms/">利用規約</a><a href="/privacy/">プライバシー</a></nav>
     </div>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;line-height:1.9;color:var(--ink-soft)">
       <strong>運営者情報</strong>　運営者:${CONTACT.name}　｜　メール:<a href="mailto:${CONTACT.email}">${CONTACT.email}</a>　｜　電話:${CONTACT.tel}　｜　所在地:${CONTACT.address}　｜　<a href="/tokushoho/">特定商取引法に基づく表記</a>
@@ -205,9 +202,9 @@ const FOOT = `
 
 const CTA = `
   <div class="cta-box">
-    <h3>キーワードを入れるだけで、AI が記事を書く。</h3>
-    <p>JP SEO Bot は登録不要。ブラウザを開いて、最初の SEO 記事を AI に書かせてみてください。</p>
-    <a class="btn" href="/app">無料で試す →</a>
+    <h3>次の30日でやることを整理します。</h3>
+    <p>Search Consoleと公開情報をもとに、優先順位つきの改善リストとコンテンツ計画を人が確認してお渡しします。</p>
+    <a class="btn" href="mailto:canadaleiluo@gmail.com?subject=無料の対象サイト確認">まずは対象サイトを確認する</a>
   </div>`
 
 // </script> が JSON 値に含まれると HTML パーサが script を早期終了させるためエスケープ
@@ -264,7 +261,7 @@ function renderArticle(a, others) {
   <meta name="description" content="${esc(a.description)}" />
   <link rel="canonical" href="${url}" />
   <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="JP SEO Bot" />
+  <meta property="og:site_name" content="SEO運用アシスタント" />
   <meta property="og:locale" content="ja_JP" />
   <meta property="og:url" content="${url}" />
   <meta property="og:title" content="${esc(a.title)}" />
@@ -317,7 +314,7 @@ function renderIndex() {
     </a>`).join('')
   const collectionLd = jsonld({
     '@context': 'https://schema.org', '@type': 'CollectionPage',
-    name: 'SEO ブログ | JP SEO Bot', url: `${SITE}/blog/`, inLanguage: 'ja',
+    name: 'SEO ブログ | SEO運用アシスタント', url: `${SITE}/blog/`, inLanguage: 'ja',
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: sorted.map((a, i) => ({ '@type': 'ListItem', position: i + 1, name: a.title, url: `${SITE}/blog/${a.slug}/` })),
@@ -327,18 +324,18 @@ function renderIndex() {
 <html lang="ja">
 <head>
   ${HEAD_COMMON}
-  <title>SEO ブログ | JP SEO Bot</title>
+  <title>SEO ブログ | SEO運用アシスタント</title>
   <meta name="description" content="日本語 SEO・AI 記事作成・オウンドメディア運用のノウハウを発信。中小企業が自分で SEO を進めるための実践ガイドです。" />
   <link rel="canonical" href="${SITE}/blog/" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="JP SEO Bot" />
+  <meta property="og:site_name" content="SEO運用アシスタント" />
   <meta property="og:url" content="${SITE}/blog/" />
-  <meta property="og:title" content="SEO ブログ | JP SEO Bot" />
+  <meta property="og:title" content="SEO ブログ | SEO運用アシスタント" />
   <meta property="og:description" content="日本語 SEO・AI 記事作成・オウンドメディア運用の実践ノウハウ。" />
   <meta property="og:locale" content="ja_JP" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta name="twitter:title" content="SEO ブログ | JP SEO Bot" />
+  <meta name="twitter:title" content="SEO ブログ | SEO運用アシスタント" />
   <meta name="twitter:description" content="日本語 SEO・AI 記事作成・オウンドメディア運用の実践ノウハウ。中小企業が自分で SEO を進めるためのガイドです。" />
   <meta property="og:image" content="${SITE}/og.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -349,9 +346,9 @@ function renderIndex() {
   ${NAV}
   <main class="wrap">
     <section class="blog-hero">
-      <p class="eyebrow">JP SEO Bot ブログ</p>
+      <p class="eyebrow">SEO運用アシスタント ブログ</p>
       <h1 class="display">日本語 SEO の実践ノウハウ</h1>
-      <p>中小企業が自分で SEO を進め、AI で記事作成を効率化するための実践ガイドを発信しています。</p>
+      <p>中小企業がSearch Consoleを読み、優先順位をつけてSEO改善を進めるための実践ガイドです。</p>
     </section>
     <div class="cards">${cards}</div>
   </main>
@@ -368,7 +365,7 @@ function renderIndex() {
 // 履歴が無く、本番だけ黙ってフォールバック値に戻る(実際に一度それで本番へ出た)。
 // そこで「定数を正とし、git が使えるローカルでだけ陳腐化を検出して落とす」方式にする。
 // これなら本番・ローカルで出力が完全に一致し、更新漏れはローカルビルドで必ず捕まる。
-const LP_LASTMOD = '2026-08-29'
+const LP_LASTMOD = '2026-09-06'
 
 function assertLpLastmodFresh() {
   // CI(Vercel 等)では検証しない。shallow clone だと `git log -1 -- index.html` が
@@ -399,6 +396,7 @@ function renderSitemap() {
   const newest = articles.reduce((m, a) => { const d = a.dateUpdated ?? a.date; return d > m ? d : m }, '2026-06-03')
   const urls = [
     { loc: `${SITE}/`, pri: '1.0', mod: LP_LASTMOD },
+    { loc: `${SITE}/sample-report/`, pri: '0.8', mod: LP_LASTMOD },
     { loc: `${SITE}/blog/`, pri: '0.8', mod: newest },
     ...articles.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, pri: '0.7', mod: a.dateUpdated ?? a.date })),
   ]
@@ -410,27 +408,24 @@ function renderSitemap() {
 // articles 配列から自動生成。記事追加で勝手に最新化される(旧 public/llms.txt の手動更新漏れを防ぐ)。
 function renderLlms() {
   const blogLines = articles.map((a) => `- ${a.title}: ${SITE}/blog/${a.slug}/`).join('\n')
-  return `# JP SEO Bot
+  return `# 日本向けSEO運用アシスタント
 
-> 日本市場特化の SEO プラットフォーム。キーワードを入力するだけで、AI が日本語 SEO 記事を自動生成し、Google 掲載順位を Search Console 連携で記録し、検索難易度に応じた最適プランを自動で提案します。中小企業・個人事業主向け、月額 ¥3,300 から、無料トライアルあり。
+> Google Search Consoleと公開情報をもとに、優先順位つきの改善リストと30日間のコンテンツ計画を人が確認して提供する単発のSEO診断です。
 
-## できること
-- キーワード検索難易度の自動判定(KD 0-100 → かんたん / ふつう / むずかしい)
-- AI による日本語 SEO 記事の自動生成 — 検索意図分析・E-E-A-T・FAQ・構造化データ(JSON-LD)対応
-- Google 掲載順位を Search Console 連携で記録(Yahoo! JAPAN は Google 検索エンジン採用のため近似)
-- 難易度別の料金プランを自動提案(総額・税込表示)
+## 30日SEO改善スタート診断
+- GSC・公開ページの課題診断
+- 影響・原因・対応・作業量を添えた優先Top 10
+- 日本語キーワード候補と2〜3サイトの競合差分
+- 30日改善計画と30分のオンライン説明
+- 先着5社 9,800円（税込・単発）、標準価格 19,800円（税込・単発）
 
-## 料金プラン(税込・目安)
-- かんたん(3 ヶ月で 1 ページ目目標): ¥3,300 / 月
-- ふつう(6 ヶ月): ¥6,600 / 月
-- むずかしい(10 ヶ月): ¥13,200 / 月
-- 無料トライアル: 登録不要、ブラウザから試せる
+順位、アクセス、問い合わせ、売上は保証しません。記事の大量作成、コード変更、リンク購入は含みません。公開デモの数値はサンプルです。
 
 ## ブログ記事 — 日本語 SEO・AI 記事作成の実践ガイド
 ${blogLines}
 
 ## 提供元
-${PUBLISHER} — JP SEO Bot(${SITE}/)
+${PUBLISHER} — 日本向けSEO運用アシスタント(${SITE}/)
 `
 }
 

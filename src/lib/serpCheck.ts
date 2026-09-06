@@ -3,6 +3,8 @@
 // 未接続(VITE_API_BASE なし / DataForSEO 未設定 / 404)= configured:false で
 // ヒューリスティック KD のみで動く(従来どおり)。
 
+import { getPilotAccessToken, pilotAuthorizationHeaders } from './pilotAccess'
+
 export interface SerpCheckResult {
   configured: boolean
   keyword: string
@@ -30,15 +32,13 @@ const NOT_CONFIGURED: Omit<SerpCheckResult, 'keyword'> = {
 
 export async function checkSerpWeakness(keyword: string): Promise<SerpCheckResult> {
   const base = apiBase()
-  if (!base) return { keyword, ...NOT_CONFIGURED }
+  if (!base || !getPilotAccessToken()) return { keyword, ...NOT_CONFIGURED }
 
   const res = await fetch(`${base.replace(/\/$/, '')}/serp-check`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(import.meta.env.VITE_API_SECRET
-        ? { 'x-api-key': import.meta.env.VITE_API_SECRET as string }
-        : {}),
+      ...pilotAuthorizationHeaders(),
     },
     body: JSON.stringify({ keyword }),
     signal: AbortSignal.timeout(30000),

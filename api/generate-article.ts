@@ -1,9 +1,9 @@
 // Vercel Edge Function — /api/generate-article
-// DeepSeek / Claude / template を env で切替えて日本語 SEO 記事を生成。
+// DeepSeek で日本語 SEO 記事を生成。上流失敗時は下書きを偽装せずエラーにする。
 //
 // 環境変数(Vercel: Project Settings → Environment Variables で設定):
 //   DEEPSEEK_API_KEY   → DeepSeek V4 Pro (deepseek-v4-pro, OpenAI 互換)
-//   未設定              → template fallback
+//   未設定              → 503 FEATURE_UNAVAILABLE
 // ※ Claude(Anthropic)は使用しない(Han 指示)。
 //
 // 入力: { keyword: string, tier?: 'easy'|'medium'|'hard', count?: number }
@@ -14,6 +14,7 @@
 
 // 拡張子なし: Vercel Edge bundler は .ts 付き相対 import を弾く(Deno 側は supabase/ 配下で .ts 付き)。
 import { buildSeoPrompt } from './_lib/seoGen'
+import { apiError, apiJson, authorizePilotRequest, readJsonObject, validKeyword } from './_lib/apiSecurity'
 
 export const config = { runtime: 'edge' }
 
@@ -46,50 +47,45 @@ const ANGLES = [
 ]
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
+  if (req.method !== 'POST') return apiError(405, 'METHOD_NOT_ALLOWED', { Allow: 'POST' })
+  const auth = await authorizePilotRequest(req, {
+    signingSecret: process.env.PILOT_ACCESS_SIGNING_SECRET,
+    allowedOrigin: process.env.APP_ALLOWED_ORIGIN ?? 'https://enkiseojp.com',
+    scope: 'article:generate',
+    limit: 4,
+    windowMs: 60 * 60_000,
+  })
+  if (auth instanceof Response) return auth
 
-  // API_SECRET 設定時のみ有効な共有シークレット門(未設定なら従来どおり)。
-  // バンドルに埋まるため完全防御ではないが、bot の無差別 POST による
-  // DeepSeek コスト流出を止める最低限のガード。
-  const secret = process.env.API_SECRET
-  if (secret && req.headers.get('x-api-key') !== secret) {
-    return json(401, { error: 'UNAUTHORIZED' })
+  const parsed = await readJsonObject(req)
+  if (parsed instanceof Response) return parsed
+  const body = parsed as Partial<ReqBody>
+  const keyword = validKeyword(body.keyword)
+  if (!keyword) return apiError(400, 'INVALID_KEYWORD')
+  if (body.tier !== undefined && !['easy', 'medium', 'hard'].includes(body.tier)) {
+    return apiError(400, 'INVALID_TIER')
   }
-
-  let body: ReqBody
-  try {
-    body = await req.json()
-  } catch {
-    return json(400, { error: 'INVALID_JSON' })
+  if (body.count !== undefined && (!Number.isInteger(body.count) || body.count < 1 || body.count > 4)) {
+    return apiError(400, 'INVALID_COUNT')
   }
-
-  const keyword = (body.keyword ?? '').trim()
-  if (!keyword) return json(400, { error: 'KEYWORD_REQUIRED', message: 'keyword は必須です' })
-  const count = Math.max(1, Math.min(8, body.count ?? 2))
+  const count = body.count ?? 2
 
   const deepseek = process.env.DEEPSEEK_API_KEY
-
-  // provider: DeepSeek V4 Pro のみ(Han 指示で Claude/Anthropic は不使用)。キーが無ければ template。
-  const genOne = deepseek ? (angle: string) => genWithDeepSeek(keyword, angle, deepseek) : null
+  if (!deepseek) return apiError(503, 'FEATURE_UNAVAILABLE')
 
   let articles: DraftArticle[]
-  if (genOne) {
-    // allSettled: 1 本失敗しても成功分は活かし、失敗した本数だけ template で穴埋め(全滅させない)。
-    const results = await Promise.allSettled(
-      Array.from({ length: count }, (_, i) => genOne(ANGLES[i % ANGLES.length])),
+  try {
+    articles = await Promise.all(
+      Array.from({ length: count }, (_, i) =>
+        genWithDeepSeek(keyword, ANGLES[i % ANGLES.length], deepseek),
+      ),
     )
-    articles = results.map((r, i) => {
-      if (r.status === 'fulfilled') return r.value
-      console.error('generation error', r.reason)
-      return templateArticle(keyword, ANGLES[i % ANGLES.length])
-    })
-  } else {
-    articles = Array.from({ length: count }, (_, i) =>
-      templateArticle(keyword, ANGLES[i % ANGLES.length]),
-    )
+  } catch (error) {
+    console.error('generation error', error)
+    return apiError(502, 'GENERATION_FAILED')
   }
 
-  return json(200, { articles })
+  return apiJson(200, { articles })
 }
 
 function buildPrompt(keyword: string, angle: string): string {
@@ -141,45 +137,4 @@ function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
     faq: faq.length > 0 ? faq : undefined,
     relatedKeywords: relatedKeywords.length > 0 ? relatedKeywords : undefined,
   }
-}
-
-function templateArticle(keyword: string, angle: string): DraftArticle {
-  const title = `${keyword}${angle}`
-  // JST 基準の日付(UTC だと日本の朝に前日表示になる)
-  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
-  return {
-    title,
-    provider: 'template',
-    markdown: `# ${title}
-
-最終更新: ${today} | 著者: JP SEO Bot 編集部
-
-## はじめに
-「${keyword}」について、初めての方にもわかりやすく解説します。
-
-## ${keyword}の基本
-${keyword}は日本市場で注目されているテーマです。基礎を押さえることが成果への第一歩です。
-
-## 押さえるべきポイント
-1. 品質の確保
-2. 費用対効果のバランス
-3. 中長期での継続
-
-## よくある質問(FAQ)
-**Q. 費用はどのくらい?** A. 月数千円から始められます。
-**Q. 効果が出るまで?** A. 3〜10 ヶ月が目安です。
-
-## まとめ
-${keyword}は小さく始めて改善を重ねることが成功の近道です。
-
----
-※ API キー未設定のため template 生成です。Vercel の環境変数に DEEPSEEK_API_KEY を設定すると本物の AI 記事になります。`,
-  }
-}
-
-function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }

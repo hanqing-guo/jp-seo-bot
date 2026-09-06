@@ -1,4 +1,4 @@
-// JP SEO Bot v2 — 3 画面 MVP store
+// SEO運用アシスタント — 公開デモ用 store
 // 単一 Keyword 配列 + localStorage 永続化のみ。
 
 import {
@@ -21,9 +21,9 @@ interface AppState {
   articles: Record<string, GeneratedArticle[]>
 }
 
-// v3: 内测 dogfood シード(enki 自社の実 KW)に差し替えたため bump。
-// 旧 v2 の localStorage(デモ KW)は無視され、新シードで初期化される。
-const STORAGE_KEY = 'jp-seo-bot:store-v3'
+// v4: 旧継続サービスの月次記事・被リンク・PRタスクを廃止したため bump。
+// v3 の保存データは表示せず、30日診断のサンプル手順で初期化する。
+const STORAGE_KEY = 'seo-operations-assistant:store-v4'
 
 const initialState: AppState = {
   keywords: SEED_KEYWORDS,
@@ -108,7 +108,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  // 「今月の AI 記事を生成」= 当該キーワードの下書きを丸ごと差し替え(append しない)。
+  // デモ用の記事下書きを丸ごと差し替える（append しない）。
   // append だと同じ angle のタイトルがクリックの度に重複して積み上がるため。
   const replaceArticles = useCallback<StoreCtx['replaceArticles']>((kwId, drafts) => {
     setState(prev => {

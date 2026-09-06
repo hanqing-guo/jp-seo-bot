@@ -1,6 +1,8 @@
 // 収録(インデックス)モニター service(フロント側)— /api/index-status に POST。
 // gscRank.ts と同じ apiBase() 規約。未接続 = configured:false。
 
+import { getPilotAccessToken, pilotAuthorizationHeaders } from './pilotAccess'
+
 export interface PageIndexStatus {
   url: string
   indexed: boolean
@@ -22,15 +24,15 @@ function apiBase(): string {
 
 export async function fetchIndexStatus(): Promise<IndexStatusResult> {
   const base = apiBase()
-  if (!base) return { configured: false, total: 0, indexedCount: 0, pages: [] }
+  if (!base || !getPilotAccessToken()) {
+    return { configured: false, total: 0, indexedCount: 0, pages: [] }
+  }
 
   const res = await fetch(`${base.replace(/\/$/, '')}/index-status`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(import.meta.env.VITE_API_SECRET
-        ? { 'x-api-key': import.meta.env.VITE_API_SECRET as string }
-        : {}),
+      ...pilotAuthorizationHeaders(),
     },
     body: JSON.stringify({}),
     // sitemap 全 URL を GSC に照会するため時間がかかる(数十 URL で 5〜15 秒)。

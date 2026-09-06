@@ -16,8 +16,8 @@ declare const Deno: {
 // ローカルはフロント(:5180)と別オリジン(:8000)なので、404 にも CORS ヘッダが必要
 // (無いと preflight / レスポンス読取が弾かれ、フロントは 404 を判定できず fetch エラーになる)。
 const corsHeaders: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+  'Access-Control-Allow-Origin': 'http://localhost:5180',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
