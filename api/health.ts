@@ -1,4 +1,4 @@
-import { apiError, apiJson } from './_lib/apiSecurity'
+import { apiError, apiJson } from './_lib/apiSecurity.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 /** Minimal deployment probe. It intentionally exposes no provider/configuration state. */
