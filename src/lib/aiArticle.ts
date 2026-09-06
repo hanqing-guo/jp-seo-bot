@@ -2,7 +2,7 @@
 //
 // 動作:
 //   1. VITE_API_BASE が設定されていれば、後端 Edge Function
-//      (generate-article) に POST して本物の AI 記事を取得。
+//      (generate-article) に POST して AI 記事を取得。
 //   2. 失敗 / 未設定なら、ブラウザ側で template fallback を生成して
 //      即座にプレビューを返す(API key 無しでも demo が動く)。
 //
@@ -10,6 +10,7 @@
 // 本物の DeepSeek / Claude 生成に切り替わる。
 
 import type { DifficultyTier, Faq } from '../store/types'
+import { getPilotAccessToken, pilotAuthorizationHeaders } from './pilotAccess'
 
 export interface DraftArticle {
   title: string
@@ -41,22 +42,20 @@ export async function generateArticles(opts: GenerateOptions): Promise<DraftArti
   const base = apiBase()
 
   // VITE_API_BASE 未設定 = API 未接続のデモモード。この時だけ template プレビューを
-  // 返す(キー無しでもデモが動く)。バッジは「プレビュー(API 未接続)」で明示される。
-  if (!base) return templateArticles(opts)
+  // 返す（キー無しでもデモが動く）。バッジは通信なしのサンプルだと明示される。
+  if (!base || !getPilotAccessToken()) return templateArticles(opts)
 
-  // API 設定済み = 本物の AI 生成を期待している状態。ここで失敗(バックエンド停止 /
+  // API 設定済み = AI 生成を期待している状態。ここで失敗(バックエンド停止 /
   // タイムアウト / 非200 / 空応答)したのに黙って低品質 template を下書きとして保存
   // すると、利用者が「AI が生成した記事」と誤認する(= テンプレ草稿が混入)。
   // 失敗は握りつぶさず throw し、呼び出し側(handleGenerate)に「生成失敗・再試行」を
   // 出させる。既存の下書きも上書きされない。
   const res = await fetch(`${base.replace(/\/$/, '')}/generate-article`, {
     method: 'POST',
-    // VITE_API_SECRET 設定時は後端の API_SECRET 門に合わせて送る(未設定なら従来どおり)。
+    // 承認済みパイロットの短期トークンだけを sessionStorage から送る。
     headers: {
       'Content-Type': 'application/json',
-      ...(import.meta.env.VITE_API_SECRET
-        ? { 'x-api-key': import.meta.env.VITE_API_SECRET as string }
-        : {}),
+      ...pilotAuthorizationHeaders(),
     },
     body: JSON.stringify(opts),
     // DeepSeek は 1 本あたり数十秒かかることがあるため余裕を持たせる。
@@ -115,10 +114,10 @@ function buildMarkdown(
   const coLine = co.length > 0 ? co.join('・') : keyword
   return `# ${title}
 
-最終更新: ${today} | 著者: JP SEO Bot 編集部(SEO 専門ライター監修)
+最終更新: ${today} | 著者: SEO運用アシスタント編集部
 
 > この記事は「${keyword}」(検索意図: ${angle.intent}/フォーカス: ${angle.focus})を
-> ターゲットに自動生成された下書きです。公開前に事実確認・自社情報の追記を行ってください。
+> 外部生成機能またはテンプレートで作成した下書きです。公開前に人が事実確認・自社情報の追記を行ってください。
 
 ## はじめに
 

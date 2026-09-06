@@ -8,46 +8,38 @@
 
 // 拡張子なし: Vercel Edge bundler は .ts 付き相対 import を弾く(Deno 側は supabase/ 配下で .ts 付き)。
 import { fetchGscRank } from './_lib/gscRank'
+import { apiError, apiJson, authorizePilotRequest, readJsonObject, validKeyword } from './_lib/apiSecurity'
 
 export const config = { runtime: 'edge' }
 
 declare const process: { env: Record<string, string | undefined> }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
-
-  // API_SECRET 設定時のみ有効な共有シークレット門(generate-article と同一規約)。
-  const secret = process.env.API_SECRET
-  if (secret && req.headers.get('x-api-key') !== secret) {
-    return json(401, { error: 'UNAUTHORIZED' })
-  }
-
-  let body: { keyword?: string }
-  try {
-    body = await req.json()
-  } catch {
-    return json(400, { error: 'INVALID_JSON' })
-  }
-  const keyword = (body.keyword ?? '').trim()
-  if (!keyword) return json(400, { error: 'KEYWORD_REQUIRED' })
+  if (req.method !== 'POST') return apiError(405, 'METHOD_NOT_ALLOWED', { Allow: 'POST' })
+  const auth = await authorizePilotRequest(req, {
+    signingSecret: process.env.PILOT_ACCESS_SIGNING_SECRET,
+    allowedOrigin: process.env.APP_ALLOWED_ORIGIN ?? 'https://enkiseojp.com',
+    scope: 'gsc:read',
+    limit: 30,
+    windowMs: 60 * 60_000,
+    requiredResource: process.env.GSC_SITE_URL,
+  })
+  if (auth instanceof Response) return auth
+  const body = await readJsonObject(req)
+  if (body instanceof Response) return body
+  const keyword = validKeyword(body.keyword)
+  if (!keyword) return apiError(400, 'INVALID_KEYWORD')
 
   const saKeyB64 = process.env.GSC_SA_KEY_B64
   const siteUrl = process.env.GSC_SITE_URL
   // GSC 未設定 = 連携オフ。エラーにせず「未接続」を返す(フロントで「未接続」表示)。
-  if (!saKeyB64 || !siteUrl) return json(200, { keyword, position: null, configured: false })
+  if (!saKeyB64 || !siteUrl) return apiError(503, 'FEATURE_UNAVAILABLE')
 
   try {
     const rank = await fetchGscRank(keyword, { saKeyB64, siteUrl })
-    return json(200, { ...rank, configured: true })
+    return apiJson(200, { ...rank, configured: true })
   } catch (e) {
     console.error('gsc-rank error', e)
-    return json(502, { error: 'GSC_FETCH_FAILED', message: e instanceof Error ? e.message : String(e) })
+    return apiError(502, 'UPSTREAM_UNAVAILABLE')
   }
-}
-
-function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }

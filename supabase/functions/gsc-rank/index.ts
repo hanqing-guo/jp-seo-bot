@@ -6,6 +6,7 @@
 // /gsc-rank を捌く。単体実行(deno run ... index.ts)時のみ自前で serve する。
 
 import { fetchGscRank } from '../../../api/_lib/gscRank.ts'
+import { apiError, authorizePilotRequest, readJsonObject, validKeyword } from '../../../api/_lib/apiSecurity.ts'
 
 declare const Deno: {
   env: { get: (k: string) => string | undefined }
@@ -13,36 +14,45 @@ declare const Deno: {
 }
 
 const corsHeaders: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  // x-api-key: フロントが VITE_API_SECRET 設定時に送る共有シークレットヘッダ(無いと preflight で弾かれる)
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+  'Access-Control-Allow-Origin': Deno.env.get('APP_ALLOWED_ORIGIN') ?? 'http://localhost:5180',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
-  if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
-
-  let body: { keyword?: string }
-  try {
-    body = await req.json()
-  } catch {
-    return json(400, { error: 'INVALID_JSON' })
-  }
-  const keyword = (body.keyword ?? '').trim()
-  if (!keyword) return json(400, { error: 'KEYWORD_REQUIRED' })
+  if (req.method !== 'POST') return withCors(apiError(405, 'METHOD_NOT_ALLOWED', { Allow: 'POST' }))
+  const auth = await authorizePilotRequest(req, {
+    signingSecret: Deno.env.get('PILOT_ACCESS_SIGNING_SECRET'),
+    allowedOrigin: Deno.env.get('APP_ALLOWED_ORIGIN') ?? 'http://localhost:5180',
+    scope: 'gsc:read',
+    limit: 30,
+    windowMs: 60 * 60_000,
+    requiredResource: Deno.env.get('GSC_SITE_URL'),
+  })
+  if (auth instanceof Response) return withCors(auth)
+  const body = await readJsonObject(req)
+  if (body instanceof Response) return withCors(body)
+  const keyword = validKeyword(body.keyword)
+  if (!keyword) return withCors(apiError(400, 'INVALID_KEYWORD'))
 
   const saKeyB64 = Deno.env.get('GSC_SA_KEY_B64')
   const siteUrl = Deno.env.get('GSC_SITE_URL')
-  if (!saKeyB64 || !siteUrl) return json(200, { keyword, position: null, configured: false })
+  if (!saKeyB64 || !siteUrl) return withCors(apiError(503, 'FEATURE_UNAVAILABLE'))
 
   try {
     const rank = await fetchGscRank(keyword, { saKeyB64, siteUrl })
     return json(200, { ...rank, configured: true })
   } catch (e) {
     console.error('gsc-rank error', e)
-    return json(502, { error: 'GSC_FETCH_FAILED', message: e instanceof Error ? e.message : String(e) })
+    return withCors(apiError(502, 'UPSTREAM_UNAVAILABLE'))
   }
+}
+
+function withCors(response: Response): Response {
+  const headers = new Headers(response.headers)
+  for (const [key, value] of Object.entries(corsHeaders)) headers.set(key, value)
+  return new Response(response.body, { status: response.status, headers })
 }
 
 function json(status: number, body: unknown): Response {

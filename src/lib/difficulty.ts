@@ -1,8 +1,5 @@
 // キーワード難易度判定 + tier マッピング
-// Han 指示書の定義に厳密に従う:
-//   🟢 かんたん   KD 0-30   → 3 ヶ月で 1 ページ目 / ¥3,000/月
-//   🟡 ふつう     KD 31-60  → 6 ヶ月で 1 ページ目 / ¥6,000/月
-//   🔴 むずかしい KD 61-100 → 10 ヶ月で 1 ページ目 / ¥12,000/月
+// 公開デモ用のキーワード難易度カテゴリ。期間・価格・順位成果は推定しない。
 
 import type { DifficultyTier, MonthlyTask } from '../store/types'
 
@@ -30,9 +27,9 @@ export const TIER_PROFILES: Record<DifficultyTier, TierProfile> = {
     bgClass: 'bg-emerald-50',
     borderClass: 'border-emerald-200',
     textClass: 'text-emerald-700',
-    targetMonths: 3,
-    monthlyBudgetYen: 3000,
-    monthlyTaskTemplate: 'AI 記事 月 2 本、内部リンク最適化',
+    targetMonths: 4,
+    monthlyBudgetYen: 0,
+    monthlyTaskTemplate: '検索意図と優先ページを確認',
   },
   medium: {
     tier: 'medium',
@@ -43,9 +40,9 @@ export const TIER_PROFILES: Record<DifficultyTier, TierProfile> = {
     bgClass: 'bg-amber-50',
     borderClass: 'border-amber-200',
     textClass: 'text-amber-700',
-    targetMonths: 6,
-    monthlyBudgetYen: 6000,
-    monthlyTaskTemplate: 'AI 記事 月 4 本、被リンク獲得',
+    targetMonths: 4,
+    monthlyBudgetYen: 0,
+    monthlyTaskTemplate: '競合差分と優先ページを確認',
   },
   hard: {
     tier: 'hard',
@@ -56,9 +53,9 @@ export const TIER_PROFILES: Record<DifficultyTier, TierProfile> = {
     bgClass: 'bg-rose-50',
     borderClass: 'border-rose-200',
     textClass: 'text-rose-700',
-    targetMonths: 10,
-    monthlyBudgetYen: 12000,
-    monthlyTaskTemplate: 'AI 記事 月 8 本、PR TIMES 配信、被リンク強化',
+    targetMonths: 4,
+    monthlyBudgetYen: 0,
+    monthlyTaskTemplate: '対象範囲と優先順位を人が精査',
   },
 }
 
@@ -182,103 +179,27 @@ export function isValidKeyword(raw: string): boolean {
 
 export function generateMonthlyTasks(tier: DifficultyTier): MonthlyTask[] {
   const profile = TIER_PROFILES[tier]
-  const tasks: MonthlyTask[] = []
-
-  if (tier === 'easy') {
-    const labels = [
-      'AI 記事 2 本 + 内部リンク整理',
-      'AI 記事 2 本 + キーワードクラスタ拡張',
-      'AI 記事 2 本 + 順位改善検証 + 共起語見直し',
-    ]
-    for (let i = 0; i < 3; i++) {
-      tasks.push({ monthNumber: i + 1, label: labels[i], budgetYen: profile.monthlyBudgetYen, status: 'planned' })
-    }
-  } else if (tier === 'medium') {
-    // 被リンクの土台づくり(note/はてな・ディレクトリ登録)は月 1 から。
-    // 新規ドメインはリンクゼロのままだと何本書いても浮かない — 後回しにしない。
-    const labels = [
-      'AI 記事 4 本 + はてなブログ / note への投稿(被リンクの土台)',
-      'AI 記事 4 本 + 業界ディレクトリ登録 + 内部リンク最適化',
-      'AI 記事 4 本 + 被リンク獲得',
-      'AI 記事 4 本 + 業界比較サイトへの掲載申請',
-      'AI 記事 4 本 + 被リンク獲得 + 既存記事リライト',
-      'AI 記事 4 本 + 順位検証 + コンテンツリフレッシュ',
-    ]
-    for (let i = 0; i < 6; i++) {
-      tasks.push({ monthNumber: i + 1, label: labels[i], budgetYen: profile.monthlyBudgetYen, status: 'planned' })
-    }
-  } else {
-    // PR TIMES は月 1 から(被リンク冷スタートを最優先)。
-    const labels = [
-      'AI 記事 8 本 + PR TIMES 配信 1 本 + ピラーページ作成',
-      'AI 記事 8 本 + 内部リンク骨組み + 被リンク獲得',
-      'AI 記事 8 本 + Qiita / Zenn 投稿 + 業界記事拡散',
-      'AI 記事 8 本 + PR TIMES 配信 1 本 + Boxil 掲載申請',
-      'AI 記事 8 本 + 既存記事リライト + 共起語見直し',
-      'AI 記事 8 本 + PR TIMES 配信 1 本 + 被リンク強化',
-      'AI 記事 8 本 + AI Overview 対応(FAQ / Schema 追加)',
-      'AI 記事 8 本 + 順位改善検証 + 内部リンク再構築',
-      'AI 記事 8 本 + PR TIMES 配信 1 本 + 海外被リンク',
-      'AI 記事 8 本 + 最終ブースト(プレスリリース + リフレッシュ)',
-    ]
-    for (let i = 0; i < 10; i++) {
-      tasks.push({ monthNumber: i + 1, label: labels[i], budgetYen: profile.monthlyBudgetYen, status: 'planned' })
-    }
-  }
-
-  return tasks
-}
-
-export function budgetBreakdown(tier: DifficultyTier): { label: string; yen: number }[] {
-  if (tier === 'easy') {
-    return [
-      { label: 'AI 記事の作成(2 本)', yen: 2000 },
-      { label: '順位チェックツール', yen: 1000 },
-    ]
-  }
-  if (tier === 'medium') {
-    return [
-      { label: 'AI 記事の作成(4 本)', yen: 3500 },
-      { label: '紹介リンクの獲得', yen: 1500 },
-      { label: '順位チェックツール', yen: 1000 },
-    ]
-  }
-  // 順位チェックツールは全档で同一サービス = ¥1,000 に統一。
-  // 月額合計 ¥12,000 は据え置き、差額は AI 記事(最大の内訳)で吸収(6500→6000)。
-  return [
-    { label: 'AI 記事の作成(8 本)', yen: 6000 },
-    { label: 'プレスリリース配信(月 1 本)', yen: 3500 },
-    { label: '紹介リンクの獲得', yen: 1500 },
-    { label: '順位チェックツール', yen: 1000 },
+  const labels = [
+    '対象URLと公開情報を読み取り専用で確認',
+    '優先課題 Top 10 と日本語キーワード候補を整理',
+    '競合 2〜3 サイトとの差分と30日アクション案を作成',
+    '診断レポートを納品し、30分の説明を実施',
   ]
+  return labels.map((label, i) => ({
+    monthNumber: i + 1,
+    label,
+    budgetYen: profile.monthlyBudgetYen,
+    status: 'planned',
+  }))
 }
 
 // 顧客向け「私たちがやること」(専門用語なし・大白話)
 export function serviceFeatures(tier: DifficultyTier): string[] {
-  const base = ['Google 検索での掲載順位をチェック・記録']
-  if (tier === 'easy') {
-    return [
-      ...base,
-      'AI が SEO 記事を毎月 2 本 作成',
-      'サイト内の改善を自動で実施',
-      '毎月、わかりやすい成果レポートをお届け',
-    ]
-  }
-  if (tier === 'medium') {
-    return [
-      ...base,
-      'AI が SEO 記事を毎月 4 本 作成',
-      '他サイトからの紹介リンクを増やす',
-      'ライバルサイトの動きを監視',
-      '毎月、わかりやすい成果レポートをお届け',
-    ]
-  }
+  void tier
   return [
-    ...base,
-    'AI が SEO 記事を毎月 8 本 作成',
-    '他サイトからの紹介リンクを増やす',
-    'ニュースサイトへプレスリリースを配信(月 1 本)',
-    '上位表示を強力に後押し',
-    '毎月、わかりやすい成果レポートをお届け',
+    '公開ページと読み取り専用の GSC データを確認',
+    '優先課題 Top 10 と日本語キーワード候補を整理',
+    '競合 2〜3 サイトとの差分を整理',
+    '30日アクション案と30分の説明を提供',
   ]
 }

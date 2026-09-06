@@ -4,49 +4,37 @@
 // env: DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD(未設定なら configured:false)
 
 import { fetchSerpTop10, scoreWeakness } from './_lib/serpWeakness'
+import { apiError, apiJson, authorizePilotRequest, readJsonObject, validKeyword } from './_lib/apiSecurity'
 
 export const config = { runtime: 'edge' }
 
 declare const process: { env: Record<string, string | undefined> }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
-
-  // API_SECRET 設定時のみ有効な共有シークレット門(generate-article と同一規約)。
-  const secret = process.env.API_SECRET
-  if (secret && req.headers.get('x-api-key') !== secret) {
-    return json(401, { error: 'UNAUTHORIZED' })
-  }
-
-  let body: { keyword?: string }
-  try {
-    body = await req.json()
-  } catch {
-    return json(400, { error: 'INVALID_JSON' })
-  }
-  const keyword = (body.keyword ?? '').trim()
-  if (!keyword) return json(400, { error: 'KEYWORD_REQUIRED' })
+  if (req.method !== 'POST') return apiError(405, 'METHOD_NOT_ALLOWED', { Allow: 'POST' })
+  const auth = await authorizePilotRequest(req, {
+    signingSecret: process.env.PILOT_ACCESS_SIGNING_SECRET,
+    allowedOrigin: process.env.APP_ALLOWED_ORIGIN ?? 'https://enkiseojp.com',
+    scope: 'serp:read',
+    limit: 10,
+    windowMs: 60 * 60_000,
+  })
+  if (auth instanceof Response) return auth
+  const body = await readJsonObject(req)
+  if (body instanceof Response) return body
+  const keyword = validKeyword(body.keyword)
+  if (!keyword) return apiError(400, 'INVALID_KEYWORD')
 
   const login = process.env.DATAFORSEO_LOGIN
   const password = process.env.DATAFORSEO_PASSWORD
-  if (!login || !password) return json(200, { keyword, configured: false })
+  if (!login || !password) return apiError(503, 'FEATURE_UNAVAILABLE')
 
   try {
     const domains = await fetchSerpTop10(keyword, { login, password })
-    if (domains.length === 0) return json(200, { keyword, configured: false })
-    return json(200, { configured: true, ...scoreWeakness(keyword, domains) })
+    if (domains.length === 0) return apiJson(200, { configured: true, ...scoreWeakness(keyword, []) })
+    return apiJson(200, { configured: true, ...scoreWeakness(keyword, domains) })
   } catch (e) {
     console.error('serp-check error', e)
-    return json(502, {
-      error: 'SERP_FETCH_FAILED',
-      message: e instanceof Error ? e.message : String(e),
-    })
+    return apiError(502, 'UPSTREAM_UNAVAILABLE')
   }
-}
-
-function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }

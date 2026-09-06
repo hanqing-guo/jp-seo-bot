@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>enkiseojp.com 自社検証レポート | SEO運用アシスタント</title>
+  <meta name="description" content="enkiseojp.comの公開ページ診断と保存済みSearch Console記録を、成果と未証明事項に分けて公開します。" />
+  <link rel="canonical" href="https://enkiseojp.com/sample-report/" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root{--paper:#f4f0e7;--card:#fffdf7;--ink:#16140d;--soft:#534d42;--line:#dcd4c2;--accent:#1f44e6}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;line-height:1.85;overflow-wrap:anywhere}a{color:#142fa3}.wrap{max-width:920px;margin:auto;padding:0 24px}.nav{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);background:rgba(244,240,231,.95)}.nav .wrap{min-height:62px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{font-weight:800;text-decoration:none;color:var(--ink)}main{padding:56px 0 80px}h1{font-family:"Hiragino Mincho ProN",serif;font-size:clamp(2rem,5vw,3.5rem);line-height:1.25;margin:.3em 0}h2{margin-top:48px;font-size:1.35rem;border-bottom:1px solid var(--line);padding-bottom:8px}h3{font-size:1rem;margin:0 0 4px}.eyebrow,.muted,.note{color:var(--soft);font-size:.9rem}.lead{font-size:1.08rem;max-width:760px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px 0}.metric,.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:20px}.metric strong{display:block;font-size:1.65rem;color:var(--accent)}table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line)}th,td{text-align:left;vertical-align:top;padding:13px;border-bottom:1px solid var(--line)}th{width:28%}li{margin:.4em 0}.callout{border-left:4px solid var(--accent);background:#fff;padding:18px 20px;margin:24px 0}.actions{display:grid;gap:12px}.action{display:grid;grid-template-columns:7rem 1fr;gap:12px}.cta{margin-top:46px;padding:26px;background:#eef1ff;border:1px solid #b8c3fb;border-radius:16px}.btn{display:inline-flex;margin-top:12px;padding:11px 18px;border-radius:999px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700}footer{border-top:1px solid var(--line);padding:30px 0;color:var(--soft);font-size:.85rem}@media(max-width:760px){.metrics{grid-template-columns:1fr 1fr}.action{grid-template-columns:1fr}th,td{display:block;width:100%}}@media(max-width:430px){.wrap{padding:0 18px}.nav .wrap{min-height:58px}.nav .wrap>a:last-child{font-size:.78rem}main{padding-top:36px}.metrics{grid-template-columns:1fr}.metric{padding:16px}h2{margin-top:38px}.btn{display:flex;justify-content:center;text-align:center;width:100%}}
+  </style>
+</head>
+<body>
+  <header class="nav"><div class="wrap"><a class="brand" href="/">✦ SEO運用アシスタント</a><a href="/">サービス案内へ</a></div></header>
+  <main><div class="wrap">
+    <p class="eyebrow">自社サイトを最初の検証対象にしました</p>
+    <h1>enkiseojp.com<br />SEO検証レポート</h1>
+    <p class="lead">これは成功事例やお客様の声ではありません。公開ページの簡易診断と、リポジトリに保存されたSearch Console記録を使い、確認できた事実・改善候補・まだ分からないことを分けた自社検証です。</p>
+    <div class="callout"><strong>結論:</strong> Googleへの収録と一部ニッチ語の上位実測はありますが、サイト全体の平均順位は低く、クリックは少数です。問い合わせ・売上への改善は未証明です。</div>
+
+    <div class="metrics">
+      <div class="metric"><strong>48</strong><span>Google収録ページ</span><div class="note">2026-08-28</div></div>
+      <div class="metric"><strong>1,990</strong><span>表示回数</span><div class="note">直近90日</div></div>
+      <div class="metric"><strong>5 / 0.3%</strong><span>クリック / CTR</span><div class="note">直近90日</div></div>
+      <div class="metric"><strong>53.2位</strong><span>平均掲載順位</span><div class="note">直近90日</div></div>
+    </div>
+
+    <h2>1. 公開ページの自動チェック</h2>
+    <p>2026-09-06に公開中だった <code>https://enkiseojp.com/</code> のトップページ1件を、ログインせず読み取り専用で確認しました。</p>
+    <table>
+      <tr><th>取得</th><td>HTTP 200、HTML 1ページ、可視テキスト約2,298文字</td></tr>
+      <tr><th>検出</th><td>title、meta description、H1、canonical、robotsを検出。HTML上にnoindex指示なし</td></tr>
+      <tr><th>当時の課題</th><td>タイトルとH1が「AIによる自動化」を中心にしており、現在販売する人手レビュー付き単発診断と一致していなかった</td></tr>
+      <tr><th>このリリース候補での対応</th><td>名称、見出し、説明、料金、申込導線を「30日SEO改善スタート診断」に統一。これは実装済みですが、検索成果への影響は未計測</td></tr>
+    </table>
+    <p class="note">自動チェックはタグの有無と文字数を見る簡易判定です。検索順位、検索需要、サイト全体の品質は測りません。対象サイトへの書き込みや変更は行っていません。</p>
+
+    <h2>2. Google SEO: GSCで確認できた事実</h2>
+    <p>2026-08-28にGoogle Search Console UIから記録した、2026-06-02〜08-25の90日集計です。比較可能な前期GSCデータはありません。</p>
+    <ul>
+      <li>インデックス済み48ページ、未インデックス7ページ</li>
+      <li>クリック5、表示回数1,990、CTR 0.3%、平均掲載順位53.2位</li>
+      <li>計測クエリ170件。1〜10位は0件、11〜20位は4件</li>
+      <li>2026-08-27以降の内容修正は集計期間外であり、この記録から効果を主張できない</li>
+    </ul>
+
+    <h2>3. Yahoo! JAPAN: 順位監視で分かったこと</h2>
+    <p>Yahoo! JAPANの保存済み実測では、8月26日に2つの着地ページ・3クエリ文字列が前10入りしました（うち2クエリは同じ記事への表記違い）。9月2日・4日には4クエリ文字列となりました。ただし9月4日はYahoo!単独測定で、Googleのクリック増と照合されていません。旧監視8語は7週間半・4回の実測で前10に入らず、広いテーマでの再現性はありません。</p>
+
+    <h2>4. GEO: 現時点では可視性を測定していません</h2>
+    <div class="card">
+      <h3>確認できたこと</h3>
+      <p>公開ページには運営者、提供内容、FAQ、参照先を明示できるHTML構造があります。</p>
+      <h3>限界</h3>
+      <p>ChatGPT、Google AI Overviews、Perplexity等での引用・表示回数を示す保存済み指標や、第三者による引用実績はありません。そのため「GEOに強い」「引用されやすい」といった成果は主張できません。</p>
+      <h3>次の確認</h3>
+      <p>主要な質問を固定し、回答・引用URL・確認日を同じ条件で記録します。観測できない場合もゼロと推定せず「未測定」または「未確認」として扱います。</p>
+    </div>
+
+    <h2>5. 次の30日で検証すること</h2>
+    <div class="actions">
+      <div class="card action"><strong>1〜3日目</strong><span>GSCから直近28日と前の28日を同条件で書き出し、クリック・表示・CTR・平均順位の比較基準を作る。</span></div>
+      <div class="card action"><strong>4〜10日目</strong><span>新しいサービス意図に合わせたタイトル・説明・H1を公開し、変更日を記録する。</span></div>
+      <div class="card action"><strong>11〜20日目</strong><span>表示回数があるのに順位・CTRが弱いページを優先Top 10に整理し、まず少数ページだけ改善する。</span></div>
+      <div class="card action"><strong>21〜30日目</strong><span>同じGSC条件で再計測し、順位だけでなくクリックと対象サイト確認の件数を確認する。</span></div>
+    </div>
+
+    <h2>6. 現時点で言えないこと</h2>
+    <ul>
+      <li>SEO作業によって問い合わせ、売上、利益が増えた</li>
+      <li>記事追加や技術修正が順位上昇の原因だった</li>
+      <li>一部ニッチ語の順位が今後も維持される</li>
+      <li>現在サイトマップにある全URLがGoogleに収録されている</li>
+    </ul>
+    <div class="cta"><strong>同じ形式で、次の30日の優先順位を整理します。</strong><p class="note">この自社検証と同様に、確認できた事実と推測、まだ分からないことを分けて納品します。順位・流入・売上は保証しません。</p><a class="btn" href="mailto:canadaleiluo@gmail.com?subject=無料の対象サイト確認&amp;body=対象サイトURL:%0A会社・屋号:%0Aご担当者名:%0A">まずは無料で対象サイトを確認する</a><p><a href="/app/audit">公開ページ診断のサンプルを試す</a> ／ <a href="/">サービス詳細へ戻る</a></p></div>
+  </div></main>
+  <footer><div class="wrap">データ出典: リポジトリ内の2026-08-28 GSC記録、2026-09-02・09-04順位レポート、2026-09-06公開ページ読み取り。最終更新: 2026-09-06</div></footer>
+</body>
+</html>

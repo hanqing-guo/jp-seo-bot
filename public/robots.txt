@@ -1,4 +1,4 @@
-# JP SEO Bot
+# 日本向けSEO運用アシスタント
 User-agent: *
 Allow: /
 

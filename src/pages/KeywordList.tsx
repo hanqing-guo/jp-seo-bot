@@ -3,16 +3,12 @@
 import { Link } from 'react-router-dom'
 import { Plus, Search, Sparkles } from 'lucide-react'
 import { useStore } from '../store/StoreProvider'
-import { TIER_PROFILES, withTax, formatYen } from '../lib/difficulty'
+import { TIER_PROFILES } from '../lib/difficulty'
 import IndexMonitor from '../components/IndexMonitor'
 import type { Keyword } from '../store/types'
 
 export default function KeywordList() {
   const { keywords } = useStore()
-
-  // 月額合計(税込)= 各 KW を難易度別の単価(easy/medium/hard)で合算。
-  // 「キーワードの数 × 難易度別の料金」= 自助選択モデルの可視化。β運用中は請求しない(目安)。
-  const monthlyTotal = keywords.reduce((sum, k) => sum + withTax(k.monthlyBudgetYen), 0)
 
   if (keywords.length === 0) {
     return (
@@ -41,10 +37,10 @@ export default function KeywordList() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">追跡中のキーワード</h1>
           <p className="text-sm text-slate-500 mt-1">
-            合計 {keywords.length} 件 ・ 月額 <span className="font-bold text-slate-700 tabular-nums">{formatYen(monthlyTotal)}</span>(税込)
+            サンプル {keywords.length} 件（実際の顧客データではありません）
           </p>
           <p className="text-xs text-amber-600 mt-0.5">
-            ベータ運用中 — 料金は目安です(請求は行いません)。Google 順位は Search Console 連携で取得。
+            難易度は簡易ヒューリスティック、順位はデモ値または「計測中」です。SERP実測は接続済みの場合のみ利用できます。
           </p>
         </div>
         <Link
@@ -89,7 +85,7 @@ function KeywordCard({ k }: { k: Keyword }) {
       <div className="mt-4">
         <div className="flex items-baseline justify-between text-xs mb-1">
           <span className="text-slate-500">
-            {k.elapsedMonths} / {k.targetMonths} ヶ月で 1 ページ目
+            サンプル計画 ステップ {k.elapsedMonths} / {k.targetMonths}
           </span>
           <span className={`tabular-nums font-bold ${profile.textClass}`}>{progress}%</span>
         </div>
@@ -102,7 +98,7 @@ function KeywordCard({ k }: { k: Keyword }) {
       </div>
 
       <div className={`mt-4 rounded-lg ${profile.bgClass} px-3 py-2 text-xs`}>
-        <div className="font-semibold text-slate-700 mb-0.5">今月の作業</div>
+        <div className="font-semibold text-slate-700 mb-0.5">現在のサンプル作業</div>
         <div className={profile.textClass}>{k.currentTaskLabel}</div>
       </div>
 

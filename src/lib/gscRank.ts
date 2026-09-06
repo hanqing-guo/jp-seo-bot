@@ -9,6 +9,8 @@
 // configured:false を返す。フロントはそれを「GSC 未接続」として表示する。
 // aiArticle.ts と同じ apiBase() 規約。
 
+import { getPilotAccessToken, pilotAuthorizationHeaders } from './pilotAccess'
+
 export interface GscRankResult {
   keyword: string
   /** 平均掲載順位(直近 28 日)。データなし / 未接続 = null */
@@ -27,16 +29,14 @@ function apiBase(): string {
 export async function fetchGoogleRank(keyword: string): Promise<GscRankResult> {
   const base = apiBase()
   // API 未接続(ローカルで VITE_API_BASE 未設定)= 未接続として返す。エラーにしない。
-  if (!base) return { keyword, position: null, configured: false }
+  if (!base || !getPilotAccessToken()) return { keyword, position: null, configured: false }
 
   const res = await fetch(`${base.replace(/\/$/, '')}/gsc-rank`, {
     method: 'POST',
-    // VITE_API_SECRET 設定時は後端の API_SECRET 門に合わせて送る(aiArticle.ts と同一規約)。
+    // 承認済みパイロットの短期トークンだけを sessionStorage から送る。
     headers: {
       'Content-Type': 'application/json',
-      ...(import.meta.env.VITE_API_SECRET
-        ? { 'x-api-key': import.meta.env.VITE_API_SECRET as string }
-        : {}),
+      ...pilotAuthorizationHeaders(),
     },
     body: JSON.stringify({ keyword }),
     // GSC API(token 交換 + query)は数秒。余裕を持って 20s。

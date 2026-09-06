@@ -1,13 +1,13 @@
-// JP SEO Bot v2 — 3 画面 MVP 用の最小型定義
+// SEO運用アシスタント — 公開デモ用の最小型定義
 
 export type DifficultyTier = 'easy' | 'medium' | 'hard'
 
 export interface MonthlyTask {
-  /** 1-indexed (1 = 開始月, 2 = 2 ヶ月目, …) */
+  /** 1-indexed sample workflow step (legacy field name retained for stored data) */
   monthNumber: number
   /** タスクの短い説明 */
   label: string
-  /** 月内の予算配分(円) */
+  /** Legacy field retained for stored demo data; public pilot pricing is separate. */
   budgetYen: number
   status: 'planned' | 'in_progress' | 'done'
 }
@@ -24,9 +24,9 @@ export interface Keyword {
   /** KD 0-100 */
   difficulty: number
   tier: DifficultyTier
-  /** 1 ページ目到達までの目標月数(3 / 6 / 10) */
+  /** Sample workflow step count (legacy field name retained for stored data). */
   targetMonths: number
-  /** 月額予算(円) */
+  /** Legacy field; not a price or subscription quote. */
   monthlyBudgetYen: number
   /** 開始月から経過した月数 */
   elapsedMonths: number

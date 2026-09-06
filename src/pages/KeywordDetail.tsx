@@ -4,17 +4,17 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, CircleDot, Clock, Copy, FileText, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react'
 import { useArticles, useKeyword, useStore } from '../store/StoreProvider'
-import { TIER_PROFILES, budgetBreakdown, serviceFeatures, withTax, formatYen } from '../lib/difficulty'
+import { TIER_PROFILES } from '../lib/difficulty'
 import { generateArticles } from '../lib/aiArticle'
 import { buildArticleJsonLd } from '../lib/jsonLd'
 import type { GeneratedArticle, Keyword, MonthlyTask } from '../store/types'
 
-const ARTICLE_COUNT_BY_TIER: Record<Keyword['tier'], number> = { easy: 2, medium: 4, hard: 8 }
+const ARTICLE_COUNT_BY_TIER: Record<Keyword['tier'], number> = { easy: 2, medium: 4, hard: 4 }
 
 const PROVIDER_BADGE: Record<string, { label: string; cls: string }> = {
   deepseek: { label: 'DeepSeek 生成', cls: 'bg-brand-100 text-brand-700' },
   claude: { label: 'Claude 生成', cls: 'bg-violet-100 text-violet-700' },
-  template: { label: 'プレビュー(API 未接続)', cls: 'bg-slate-100 text-slate-500' },
+  template: { label: 'サンプル下書き（通信なし）', cls: 'bg-slate-100 text-slate-500' },
 }
 
 export default function KeywordDetail() {
@@ -26,7 +26,6 @@ export default function KeywordDetail() {
 
   const profile = TIER_PROFILES[kw.tier]
   const progress = Math.min(100, Math.round((kw.elapsedMonths / kw.targetMonths) * 100))
-  const breakdown = budgetBreakdown(kw.tier)
 
   function handleDelete() {
     if (confirm('このキーワードを削除しますか?')) {
@@ -58,16 +57,16 @@ export default function KeywordDetail() {
         <div className="mt-1 flex items-center gap-3 text-sm">
           <span className={`font-semibold ${profile.textClass}`}>{profile.label}</span>
           <span className="text-slate-400">
-            目標 {profile.targetMonths} ヶ月で 1 ページ目
+            ヒューリスティック推定（サンプル）
           </span>
         </div>
       </header>
 
       <ProgressCard kw={kw} progress={progress} profile={profile} />
       <section className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-bold text-slate-900 mb-3">私たちがやること</h2>
+        <h2 className="text-sm font-bold text-slate-900 mb-3">デモで確認できること</h2>
         <ul className="space-y-2">
-          {serviceFeatures(kw.tier).map((f, i) => (
+          {['サンプルの作業順序を整理', 'GSC接続時のみGoogle平均掲載順位を取得', '公開前の確認が必要な記事下書きをプレビュー'].map((f, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
               <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                 <Check className="size-3.5" />
@@ -79,7 +78,7 @@ export default function KeywordDetail() {
       </section>
       <TasksCard kw={kw} onUpdateStatus={updateTaskStatus} />
       <ArticlesCard kw={kw} />
-      <BudgetCard breakdown={breakdown} monthlyTotal={kw.monthlyBudgetYen} totalMonths={kw.targetMonths} />
+      <PilotCard />
     </div>
   )
 }
@@ -99,7 +98,7 @@ function ProgressCard({ kw, profile, progress }: {
     try {
       const r = await refreshGoogleRank(kw.id, kw.keyword)
       if (!r.configured) {
-        setRankNote('GSC 未接続 — Vercel に GSC_SA_KEY_B64 / GSC_SITE_URL を設定すると Google 順位を自動取得します。')
+        setRankNote('GSCはこのデモでは未接続です。表示中のサンプル順位は実測値ではありません。')
       } else if (r.position === null) {
         setRankNote('GSC 接続済み。ただしこのキーワードはまだ表示データがありません(掲載されると順位が反映されます)。')
       } else {
@@ -114,7 +113,8 @@ function ProgressCard({ kw, profile, progress }: {
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
-      <h2 className="text-sm font-bold text-slate-900 mb-4">目標達成までの進捗</h2>
+      <h2 className="text-sm font-bold text-slate-900 mb-1">サンプル計画と順位表示</h2>
+      <p className="mb-4 text-xs text-amber-700">期間・進捗・Yahoo順位はデモ値です。順位上昇を予測または保証するものではありません。</p>
 
       <div className="space-y-4">
         <div>
@@ -123,10 +123,10 @@ function ProgressCard({ kw, profile, progress }: {
               順位の推移は下の RankPanel(スパークライン)で別途表示する。 */}
           <div className="flex items-baseline justify-between text-xs mb-1">
             <span className="text-slate-500">
-              目標 {profile.targetMonths} ヶ月で 1 ページ目
+              サンプル計画の経過
             </span>
             <span className="tabular-nums font-bold" style={{ color: profile.color }}>
-              {kw.elapsedMonths} / {kw.targetMonths} ヶ月({progress}%)
+              ステップ {kw.elapsedMonths} / {kw.targetMonths}（{progress}%）
             </span>
           </div>
           <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
@@ -140,8 +140,8 @@ function ProgressCard({ kw, profile, progress }: {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <RankPanel label="Google Japan" rank={kw.googleRank} history={kw.rankHistory.map(s => s.google)} />
-          <RankPanel label="Yahoo Japan"  rank={kw.yahooRank}  history={kw.rankHistory.map(s => s.yahoo)} />
+          <RankPanel label="Google（未接続時はサンプル）" rank={kw.googleRank} history={kw.rankHistory.map(s => s.google)} />
+          <RankPanel label="Yahoo（サンプルのみ）" rank={kw.yahooRank} history={kw.rankHistory.map(s => s.yahoo)} />
         </div>
 
         {/* GSC(Google Search Console)から Google の平均掲載順位を取得して反映。
@@ -225,7 +225,8 @@ function TasksCard({ kw, onUpdateStatus }: {
 }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
-      <h2 className="text-sm font-bold text-slate-900 mb-4">毎月のタスク</h2>
+      <h2 className="text-sm font-bold text-slate-900 mb-1">サンプル作業リスト</h2>
+      <p className="mb-4 text-xs text-slate-500">一般的な作業例です。実際の30日計画はサイトを診断して人が作成します。</p>
       <ol className="space-y-3">
         {kw.monthlyTasks.map(task => (
           <TaskRow key={task.monthNumber} task={task} onToggle={(next) => onUpdateStatus(kw.id, task.monthNumber, next)} />
@@ -250,7 +251,7 @@ function TaskRow({ task, onToggle }: { task: MonthlyTask; onToggle: (next: Month
         type="button"
         onClick={() => onToggle(next)}
         className={`flex size-8 items-center justify-center rounded-full shrink-0 hover:opacity-80 transition ${iconCls}`}
-        aria-label={`タスク ${task.monthNumber} ヶ月目 を ${next} に切替`}
+        aria-label={`タスク ステップ ${task.monthNumber} を ${next} に切替`}
       >
         {status === 'done' ? <Check className="size-4" /> :
          status === 'in_progress' ? <Clock className="size-4" /> :
@@ -258,7 +259,7 @@ function TaskRow({ task, onToggle }: { task: MonthlyTask; onToggle: (next: Month
       </button>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-slate-500 tabular-nums">{task.monthNumber} ヶ月目</span>
+          <span className="text-xs font-semibold text-slate-500 tabular-nums">ステップ {task.monthNumber}</span>
           {status === 'in_progress' ? <span className="text-[11px] text-brand-700 bg-brand-100 px-1.5 py-0.5 rounded-full">実行中</span> : null}
           {status === 'done' ? <span className="text-[11px] text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">完了</span> : null}
         </div>
@@ -266,67 +267,16 @@ function TaskRow({ task, onToggle }: { task: MonthlyTask; onToggle: (next: Month
           {task.label}
         </p>
       </div>
-      <span className="text-xs tabular-nums text-slate-400 shrink-0">
-        {formatYen(task.budgetYen)}
-      </span>
     </li>
   )
 }
 
-function BudgetCard({ breakdown, monthlyTotal, totalMonths }: {
-  breakdown: { label: string; yen: number }[]
-  monthlyTotal: number
-  totalMonths: number
-}) {
-  const monthlyTaxIncl = withTax(monthlyTotal)
-  const totalCost = monthlyTaxIncl * totalMonths
+function PilotCard() {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
-      <h2 className="text-sm font-bold text-slate-900 mb-4">費用の内訳</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <div className="text-xs text-slate-500">月額予算(税込)</div>
-          <div className="mt-1 text-3xl font-bold text-slate-900 tabular-nums">
-            {formatYen(monthlyTaxIncl)}
-          </div>
-          <ul className="mt-3 space-y-1.5 text-sm">
-            {breakdown.map(b => (
-              <li key={b.label} className="flex justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-slate-600">{b.label}<span className="text-[10px] text-slate-400 ml-1">(税抜)</span></span>
-                <span className="tabular-nums text-slate-900 font-semibold">{formatYen(b.yen)}</span>
-              </li>
-            ))}
-            <li className="flex justify-between pt-1 text-slate-600">
-              <span>小計(税抜)</span>
-              <span className="tabular-nums">{formatYen(monthlyTotal)}</span>
-            </li>
-            <li className="flex justify-between pt-1 text-xs text-slate-500">
-              <span>消費税(10%)</span>
-              <span className="tabular-nums">{formatYen(monthlyTaxIncl - monthlyTotal)}</span>
-            </li>
-            <li className="flex justify-between pt-1 font-bold text-slate-900">
-              <span>合計(税込)</span>
-              <span className="tabular-nums">{formatYen(monthlyTaxIncl)} / 月</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
-          <div className="text-xs text-slate-500">1 ページ目到達までの総額(税込)</div>
-          <div className="mt-1 text-3xl font-bold text-slate-900 tabular-nums">
-            {formatYen(totalCost)}
-          </div>
-          <div className="mt-1 text-xs text-slate-500">
-            {formatYen(monthlyTaxIncl)}/月 × {totalMonths} ヶ月
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs text-slate-500 leading-relaxed">
-            すべて月 1 回払い(Stripe / 銀行振込)。<br />
-            途中解約は翌月から。
-          </div>
-        </div>
-      </div>
+    <section className="rounded-2xl border border-brand-200 bg-brand-50 p-6">
+      <h2 className="text-sm font-bold text-slate-900">30日SEO改善スタート診断</h2>
+      <p className="mt-2 text-sm text-slate-700">先着5社 ¥9,800（税込・単発）／標準価格 ¥19,800（税込）。公開デモから自動申込みや決済は行われません。</p>
+      <a className="mt-4 inline-flex rounded-lg bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700" href="mailto:canadaleiluo@gmail.com?subject=30日SEO改善スタート診断の申込み&amp;body=対象サイトURL:%0A会社・屋号:%0Aご担当者名:%0A">対象サイトを確認して申し込む</a>
     </section>
   )
 }
@@ -371,9 +321,9 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-sm font-bold text-slate-900">AI 記事ドラフト</h2>
+          <h2 className="text-sm font-bold text-slate-900">記事下書きプレビュー</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            今月の目標: {count} 本({profile.emoji} {profile.label})
+            デモ用サンプル: 最大 {count} 本（{profile.emoji} {profile.label}）
           </p>
         </div>
         <button
@@ -389,7 +339,7 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
           ) : (
             <>
               <Sparkles className="size-4" />
-              今月の AI 記事を生成({count} 本)
+              下書きを作成({count} 本)
             </>
           )}
         </button>
@@ -399,7 +349,7 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
         <div className="rounded-xl border border-brand-200 bg-brand-50/50 py-10 text-center">
           <Loader2 className="mx-auto mb-3 size-8 animate-spin text-brand-600" />
           <p className="text-sm font-semibold text-slate-800">
-            AI が「{kw.keyword}」向けの記事を {count} 本 生成しています…
+            「{kw.keyword}」向けの下書きを {count} 本 作成しています…
           </p>
           <p className="mt-1 text-xs text-slate-500">
             通常 20〜40 秒ほどかかります(経過 {elapsed} 秒)。このページを閉じずにお待ちください。
@@ -410,7 +360,7 @@ function ArticlesCard({ kw }: { kw: Keyword }) {
           <FileText className="mx-auto mb-2 size-8 text-slate-300" />
           <p className="text-sm text-slate-500">まだ記事がありません。</p>
           <p className="mt-1 text-xs text-slate-400">
-            「今月の AI 記事を生成」を押すと、{kw.keyword} 向けの日本語 SEO 記事の下書きが作成されます。
+            「下書きを作成」を押すと、{kw.keyword} 向けの日本語SEO記事の下書きを表示します。未接続時は通信なしのサンプルで、納品物には含まれません。
           </p>
         </div>
       ) : (

@@ -1,15 +1,16 @@
 // Edge Function — generate-article
-// DeepSeek / Claude / template を env で切替えて日本語 SEO 記事を生成。
+// DeepSeek で日本語 SEO 記事を生成。上流失敗時は下書きを偽装せずエラーにする。
 //
 // 環境変数:
 //   DEEPSEEK_API_KEY   → DeepSeek V4 Pro (deepseek-v4-pro, OpenAI 互換)
-//   未設定              → template fallback
+//   未設定              → 503 FEATURE_UNAVAILABLE
 // ※ Claude(Anthropic)は使用しない(Han 指示)。
 //
 // 入力: { keyword: string, tier: 'easy'|'medium'|'hard', count: number }
 // 出力: { articles: [{ title, markdown, provider }] }
 
 import { buildSeoPrompt } from '../../../api/_lib/seoGen.ts'
+import { apiError, authorizePilotRequest, readJsonObject, validKeyword } from '../../../api/_lib/apiSecurity.ts'
 
 declare const Deno: {
   env: { get: (k: string) => string | undefined }
@@ -17,9 +18,8 @@ declare const Deno: {
 }
 
 const corsHeaders: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  // x-api-key: フロントが VITE_API_SECRET 設定時に送る共有シークレットヘッダ(無いと preflight で弾かれる)
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+  'Access-Control-Allow-Origin': Deno.env.get('APP_ALLOWED_ORIGIN') ?? 'http://localhost:5180',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -51,39 +51,41 @@ const ANGLES = [
 
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
-  if (req.method !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' })
-
-  let body: ReqBody
-  try {
-    body = await req.json()
-  } catch {
-    return json(400, { error: 'INVALID_JSON' })
+  if (req.method !== 'POST') return withCors(apiError(405, 'METHOD_NOT_ALLOWED', { Allow: 'POST' }))
+  const auth = await authorizePilotRequest(req, {
+    signingSecret: Deno.env.get('PILOT_ACCESS_SIGNING_SECRET'),
+    allowedOrigin: Deno.env.get('APP_ALLOWED_ORIGIN') ?? 'http://localhost:5180',
+    scope: 'article:generate',
+    limit: 4,
+    windowMs: 60 * 60_000,
+  })
+  if (auth instanceof Response) return withCors(auth)
+  const parsed = await readJsonObject(req)
+  if (parsed instanceof Response) return withCors(parsed)
+  const body = parsed as Partial<ReqBody>
+  const keyword = validKeyword(body.keyword)
+  if (!keyword) return withCors(apiError(400, 'INVALID_KEYWORD'))
+  if (body.tier !== undefined && !['easy', 'medium', 'hard'].includes(body.tier)) {
+    return withCors(apiError(400, 'INVALID_TIER'))
   }
-
-  const keyword = (body.keyword ?? '').trim()
-  if (!keyword) return json(400, { error: 'KEYWORD_REQUIRED', message: 'keyword は必須です' })
-  const count = Math.max(1, Math.min(8, body.count ?? 2))
+  if (body.count !== undefined && (!Number.isInteger(body.count) || body.count < 1 || body.count > 4)) {
+    return withCors(apiError(400, 'INVALID_COUNT'))
+  }
+  const count = body.count ?? 2
 
   const deepseek = Deno.env.get('DEEPSEEK_API_KEY')
-
-  // provider: DeepSeek V4 Pro のみ(Han 指示で Claude/Anthropic は不使用)。キーが無ければ template。
-  const genOne = deepseek ? (angle: string) => genWithDeepSeek(keyword, angle, deepseek) : null
+  if (!deepseek) return withCors(apiError(503, 'FEATURE_UNAVAILABLE'))
 
   let articles: DraftArticle[]
-  if (genOne) {
-    // allSettled: 1 本失敗しても成功分は活かし、失敗した本数だけ template で穴埋め(全滅させない)。
-    const results = await Promise.allSettled(
-      Array.from({ length: count }, (_, i) => genOne(ANGLES[i % ANGLES.length])),
+  try {
+    articles = await Promise.all(
+      Array.from({ length: count }, (_, i) =>
+        genWithDeepSeek(keyword, ANGLES[i % ANGLES.length], deepseek),
+      ),
     )
-    articles = results.map((r, i) => {
-      if (r.status === 'fulfilled') return r.value
-      console.error('generation error', r.reason)
-      return templateArticle(keyword, ANGLES[i % ANGLES.length])
-    })
-  } else {
-    articles = Array.from({ length: count }, (_, i) =>
-      templateArticle(keyword, ANGLES[i % ANGLES.length]),
-    )
+  } catch (error) {
+    console.error('generation error', error)
+    return withCors(apiError(502, 'GENERATION_FAILED'))
   }
 
   return json(200, { articles })
@@ -140,45 +142,17 @@ function parseArticle(text: string): Omit<DraftArticle, 'provider'> {
   }
 }
 
-function templateArticle(keyword: string, angle: string): DraftArticle {
-  const title = `${keyword}${angle}`
-  // JST 基準の日付(UTC だと日本の朝に前日表示になる)
-  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
-  return {
-    title,
-    provider: 'template',
-    markdown: `# ${title}
-
-最終更新: ${today} | 著者: JP SEO Bot 編集部
-
-## はじめに
-「${keyword}」について、初めての方にもわかりやすく解説します。
-
-## ${keyword}の基本
-${keyword}は日本市場で注目されているテーマです。基礎を押さえることが成果への第一歩です。
-
-## 押さえるべきポイント
-1. 品質の確保
-2. 費用対効果のバランス
-3. 中長期での継続
-
-## よくある質問(FAQ)
-**Q. 費用はどのくらい?** A. 月数千円から始められます。
-**Q. 効果が出るまで?** A. 3〜10 ヶ月が目安です。
-
-## まとめ
-${keyword}は小さく始めて改善を重ねることが成功の近道です。
-
----
-※ API キー未設定のため template 生成です。DEEPSEEK_API_KEY か ANTHROPIC_API_KEY を設定すると本物の AI 記事になります。`,
-  }
-}
-
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
+}
+
+function withCors(response: Response): Response {
+  const headers = new Headers(response.headers)
+  for (const [key, value] of Object.entries(corsHeaders)) headers.set(key, value)
+  return new Response(response.body, { status: response.status, headers })
 }
 
 // エントリポイント。ローカルは server.ts(ルーター)が handler を import するため、

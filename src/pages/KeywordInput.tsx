@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles, X } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
-import { estimateKD, profileFromKD, budgetBreakdown, serviceFeatures, TIER_PROFILES, withTax, isValidKeyword, formatYen } from '../lib/difficulty'
+import { estimateKD, profileFromKD, serviceFeatures, TIER_PROFILES, isValidKeyword } from '../lib/difficulty'
 import { checkSerpWeakness, type SerpCheckResult } from '../lib/serpCheck'
 import type { DifficultyTier } from '../store/types'
 
@@ -50,7 +50,6 @@ export default function KeywordInput() {
       : heuristicKd
   const myTier: DifficultyTier | null = kd !== null ? profileFromKD(kd).tier : null
   const myProfile = myTier ? TIER_PROFILES[myTier] : null
-  const breakdown = myTier ? budgetBreakdown(myTier) : []
   const features = myTier ? serviceFeatures(myTier) : []
 
   function handleSubmit(e: React.FormEvent) {
@@ -78,7 +77,7 @@ export default function KeywordInput() {
 
       <h1 className="text-3xl font-bold text-slate-900">キーワードを追加</h1>
       <p className="mt-2 text-sm text-slate-500">
-        上げたいキーワードを入力するだけ。最適なプランを自動でご提案します。
+        サンプルキーワードを入力すると、簡易ヒューリスティックによる難易度と作業例を表示します。
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-8">
@@ -121,10 +120,10 @@ export default function KeywordInput() {
             <div>
               <div className="mb-3">
                 <div className="text-sm font-semibold text-slate-700">
-                  あなたのキーワードに最適なプラン
+                  サンプル難易度
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  ※ 難易度はキーワードから自動推定した目安です(実際の競合状況により前後します)
+                  ※ キーワード文字列だけから推定するヒューリスティック値です。検索需要や実際の競合強度を測定した値ではありません。
                 </div>
               </div>
 
@@ -146,7 +145,7 @@ export default function KeywordInput() {
                   <p className="mt-2 text-xs text-rose-500">{serpError}</p>
                 ) : serp && !serp.configured ? (
                   <p className="mt-2 text-xs text-slate-400">
-                    実測チェックは未接続です(管理者: DATAFORSEO_LOGIN を設定すると有効になります)
+                    SERP実測はこのデモでは未接続です。現在の難易度はヒューリスティック推定のみです。
                   </p>
                 ) : serp?.configured ? (
                   <div
@@ -161,20 +160,19 @@ export default function KeywordInput() {
                   >
                     {serp.verdict === 'winnable' ? (
                       <>
-                        <span className="font-bold">勝てる見込みが高いキーワードです。</span>
+                        <span className="font-bold">比較的取り組みやすい可能性があります。</span>
                         上位 10 件のうち {serp.weakCount} 件が個人ブログ・Q&A サイト
-                        ({serp.weakDomains.slice(0, 3).join(' / ')})— 新しいサイトでも入り込む余地があります。
+                        ({serp.weakDomains.slice(0, 3).join(' / ')})。順位を保証する判定ではありません。
                       </>
                     ) : serp.verdict === 'fair' ? (
                       <>
-                        <span className="font-bold">挑戦できるキーワードです。</span>
-                        上位 10 件のうち {serp.weakCount} 件が個人サイト系。良質な記事 + 内部リンクで狙えます。
+                        <span className="font-bold">追加調査が必要なキーワードです。</span>
+                        上位10件のうち {serp.weakCount} 件が個人サイト系です。実際の採否はサイト状況と検索意図を確認して判断します。
                       </>
                     ) : (
                       <>
                         <span className="font-bold">上位 10 件がすべて企業サイトです。</span>
-                        新しいサイトには長期戦になります。まずは関連する具体的なキーワード(ロングテール)から
-                        始めることをおすすめします。
+                        競争が強い可能性があります。関連する具体的なキーワードも含めて人が確認する必要があります。
                       </>
                     )}
                   </div>
@@ -196,20 +194,14 @@ export default function KeywordInput() {
                     >
                       {isMine ? (
                         <span className="absolute -top-2.5 left-4 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                          あなたのキーワード
+                          推定カテゴリ
                         </span>
                       ) : null}
                       <div className="text-2xl">{p.emoji}</div>
                       <div className={`mt-1 text-lg font-bold ${isMine ? p.textClass : 'text-slate-700'}`}>
                         {p.label}
                       </div>
-                      <div className="mt-2 text-sm text-slate-600">
-                        <span className="text-2xl font-bold text-slate-900">{p.targetMonths}</span> ヶ月で1ページ目
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-slate-900 tabular-nums">
-                        {formatYen(withTax(p.monthlyBudgetYen))}
-                        <span className="text-xs font-normal text-slate-500"> / 月(税込)</span>
-                      </div>
+                      <div className="mt-2 text-xs text-slate-600">作業例を確認するためのデモ分類</div>
                     </div>
                   )
                 })}
@@ -217,7 +209,7 @@ export default function KeywordInput() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <h3 className="text-sm font-bold text-slate-900">このプランでやること</h3>
+              <h3 className="text-sm font-bold text-slate-900">サンプル作業リスト</h3>
               <ul className="mt-3 space-y-2">
                 {features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
@@ -230,42 +222,13 @@ export default function KeywordInput() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <h3 className="text-sm font-bold text-slate-900">料金の内訳</h3>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {formatYen(withTax(myProfile.monthlyBudgetYen))}
-                </span>
-                <span className="text-sm text-slate-500">/ 月(税込)</span>
-              </div>
-              <ul className="mt-3 space-y-1.5 text-sm">
-                {breakdown.map(b => (
-                  <li key={b.label} className="flex justify-between border-b border-slate-100 pb-1.5">
-                    <span className="text-slate-600">{b.label}<span className="text-[10px] text-slate-400 ml-1">(税抜)</span></span>
-                    <span className="tabular-nums text-slate-900 font-semibold">{formatYen(b.yen)}</span>
-                  </li>
-                ))}
-                <li className="flex justify-between pt-1 text-slate-600">
-                  <span>小計(税抜)</span>
-                  <span className="tabular-nums">{formatYen(myProfile.monthlyBudgetYen)}</span>
-                </li>
-                <li className="flex justify-between pt-1 text-xs text-slate-500">
-                  <span>消費税(10%)</span>
-                  <span className="tabular-nums">{formatYen(withTax(myProfile.monthlyBudgetYen) - myProfile.monthlyBudgetYen)}</span>
-                </li>
-                <li className="flex justify-between pt-1 font-bold text-slate-900">
-                  <span>合計(税込)</span>
-                  <span className="tabular-nums">{formatYen(withTax(myProfile.monthlyBudgetYen))} / 月</span>
-                </li>
-              </ul>
-              <p className="mt-3 text-xs text-slate-500">
-                {myProfile.targetMonths} ヶ月続けた場合の総額: {formatYen(withTax(myProfile.monthlyBudgetYen) * myProfile.targetMonths)}(税込・月 1 回払い・いつでも解約可)
-              </p>
+            <div className="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm text-slate-700">
+              この画面は見積もり・申込み画面ではありません。有料の「30日SEO改善スタート診断」は単発サービスで、対象URLを確認した後にメールで範囲と納期をご案内します。
             </div>
           </>
         ) : (
           <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-400">
-            キーワードを入力すると、最適なプランと料金が表示されます
+            キーワードを入力すると、サンプルの難易度と作業例が表示されます
           </div>
         )}
 
@@ -275,7 +238,7 @@ export default function KeywordInput() {
           className="w-full inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-4 text-lg font-bold text-white shadow-xs hover:bg-brand-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
         >
           <Sparkles className="size-5 mr-2" />
-          このプランで始める
+          デモに追加する
           <ArrowRight className="size-5 ml-2" />
         </button>
       </form>

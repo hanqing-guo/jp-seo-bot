@@ -3,25 +3,29 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "日本市場特化 SEO ボット プラットフォーム — JAPAN_SPEC v1.1 実装",
+  "description": "日本向けSEO運用アシスタント — 手動パイロットとサンプルデモ",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build && node scripts/build-blog.mjs",
     "preview": "vite preview --host",
-    "typecheck": "tsc --noEmit",
-    "api:local": "deno run --allow-net --allow-env --env-file=supabase/.env supabase/functions/server.ts"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "test": "vitest run",
+    "check": "npm run test && npm run typecheck && npm run build",
+    "api:local": "deno run --allow-net --allow-env --env-file=supabase/.env supabase/functions/server.ts",
+    "pilot:token": "node scripts/mint-pilot-token.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.17.0"
+    "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.61.0",
@@ -33,7 +37,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "jsdom": "^29.1.1",
-    "postcss": "^8.4.47",
+    "postcss": "^8.5.28",
     "prettier": "^3.8.4",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",

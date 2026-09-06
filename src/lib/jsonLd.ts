@@ -15,7 +15,7 @@ export function buildArticleJsonLd(article: GeneratedArticle): string {
       ...(article.metaDescription ? { description: article.metaDescription } : {}),
       datePublished: article.createdAt,
       dateModified: article.createdAt,
-      author: { '@type': 'Organization', name: 'JP SEO Bot' },
+      author: { '@type': 'Organization', name: 'SEO運用アシスタント' },
       ...(article.relatedKeywords && article.relatedKeywords.length > 0
         ? { keywords: article.relatedKeywords.join(', ') }
         : {}),
