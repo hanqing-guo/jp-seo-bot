@@ -1,5 +1,5 @@
-import { apiError, apiJson, readJsonObject } from './_lib/apiSecurity'
-import { auditPublicUrl, UrlAuditError } from './_lib/urlAudit'
+import { apiError, apiJson, readJsonObject } from './_lib/apiSecurity.js'
+import { auditPublicUrl, UrlAuditError } from './_lib/urlAudit.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 const WINDOW_MS = 15 * 60_000
